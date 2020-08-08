@@ -9,3 +9,45 @@
 // DIAN
 // 5. Laporan (nama/id) Employee
 // 6. LaporanAll (kosong) []Employee
+
+syntax = "proto3";
+
+package hrd;
+
+message Employee {
+  int64 id  =1;
+  int64 absen = 2;
+  int64 cuti = 3;
+  string nama = 4;
+  string username = 5;
+  string password = 6;
+  float gajiPokok = 7;
+  float totalGaji = 8;
+  float tunjanganMakan = 9;
+  float tunjanganTransport = 10;
+  string status = 11;
+  string role = 12;
+}
+
+message AllEmployee {
+  repeated Employee employes = 1;
+}
+
+message Empty {}
+
+message Result {
+  Employee response = 1;
+}
+
+message NameId {
+  string id = 1;
+  string name = 2;
+}
+
+service manageEmp {
+  rpc CreateEmployee (Employee) returns (Employee) {}
+  rpc ReadEmployee (NameId) returns (Employee) {}
+  rpc ReadAllEmployee (Empty) returns (AllEmployee) {}
+  rpc UpdateEmployee (NameId) returns (Employee) {}
+  rpc DeleteEmployee (NameId) returns (Result) {}
+}

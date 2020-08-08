@@ -10,3 +10,4 @@ totalGaji
 tunjanganMakan
 tunjanganTransport
 status
+role
