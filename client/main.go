@@ -17,7 +17,7 @@ const (
 func main() {
 
 fmt.Println("------------------------------------------------------------------------")
-	fmt.Println("Welcome To Employee Menu, For All Employee are Our utmost Priorit!!")
+	fmt.Println("Welcome To Employee Menu, For All Employee are Our utmost Priority!!")
 	fmt.Println("----------------------------------------------------------------")
 	var a int
 	fmt.Println("<< 1. Login STAFF >>")
