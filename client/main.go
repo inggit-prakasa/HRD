@@ -15,6 +15,45 @@ const (
 )
 
 func main() {
+
+fmt.Println("----------------------------------------------------------------")
+	fmt.Println("Welcome To Our Employee Menu, For All Staff are Our Prioritize!!")
+	fmt.Println("----------------------------------------------------------------")
+	var a int
+	fmt.Println("<< 1. Login STAFF >>")
+	fmt.Println("<< 2. Login HRD   >>")
+	fmt.Println("<< 3. Exit       >>")
+	fmt.Print("Input Login sesuai yang Anda inginkan: ")
+	fmt.Scanln(&a)
+	switch a {
+	case 1:
+		fmt.Println("--------------------------------------------------")
+		fmt.Println("               MENU STAFF                         ")
+		fmt.Println("--------------------------------------------------")
+		fmt.Println("|| 1. Absen Staff                               ||")
+		fmt.Println("|| 2. Lihat Profile Staff Anda                  ||")
+		fmt.Println(" ")
+		var b int
+		fmt.Print("Input Pilihan Anda :")
+		fmt.Scanln(&b)
+
+	case 2:
+		fmt.Println("--------------------------------------------------")
+		fmt.Println("               MENU HRD                           ")
+		fmt.Println("--------------------------------------------------")
+		fmt.Println("|| 1. Manajemen Employee                        ||")
+		fmt.Println("|| 2. Print Laporan Employee                    ||")
+		fmt.Println(" ")
+		var c int
+		fmt.Print("Input Pilihan Anda :")
+		fmt.Scanln(&c)
+	default:
+		fmt.Println("Mohon input sesuai Menu ")
+		fmt.Println(" ")
+		main()
+
+	}
+}
 	//TIARA
 
 	//LOGIN
