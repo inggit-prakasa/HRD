@@ -11,9 +11,13 @@ func main() {
 	//Edit
 
 	//Edit Sesuatu
+	//Next Edit
+	//Edit Edit Edit
 
 	//Gua juga ngedit
 	//Edit Lagi
 	//dian
+
+	//Edit Punya Inggit
 
 }
