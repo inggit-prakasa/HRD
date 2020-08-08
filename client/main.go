@@ -12,4 +12,6 @@ func main() {
 
 	//Edit Sesuatu
 	//Next Edit
+	//Edit Edit Edit
+
 }
