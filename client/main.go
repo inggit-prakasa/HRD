@@ -18,5 +18,5 @@ func main() {
 	//Edit Lagi
 	//dian
 
-	//Edit Punya Inggit
+	//Edit Punya Inggitbaru
 }
