@@ -7,4 +7,6 @@ func main() {
 	//PILIHAN STAFF
 	//MENUSTAFF || MENUHRD
 	//FUNGSISTAFF || HRD
+
+	//Edit
 }
