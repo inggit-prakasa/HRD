@@ -13,28 +13,22 @@
 syntax ="proto3";
 
 package employee;
-import "google/protobuf/Empty.proto";
+//import "google/protobuf/Empty.proto";
 
 service HRD {
-    rpc LaporanByUsername(GetEmpByName)returns(LaporanEmployee){}
-    rpc LaporanAllEmployee(google.protobuf.Empty)returns(ArrEmployee){}
+    rpc LaporanByUsername(GetEmpByUsername)returns(LaporanEmployee){}
+    //rpc LaporanAllEmployee(google.protobuf.Empty)returns(ArrEmployee){}
 }
 
-message GetEmpByName{
-    string Name =1;
+message GetEmpByUsername{
+    string Username =1;
 }
 
 message LaporanEmployee {
     string ID = 1;
-    string Absen = 2;
-    string Cuti = 3;
-    string Nama = 4;
-    string Username = 5;
-    string GajiPokok = 6;
-    string TotalGaji = 7;
-    string TunjanganMakan = 8;
-    string TunjanganTransport = 9;
-    string Status = 10;
+    string Nama = 2;
+    string TotalGaji = 3;
+    string Status = 4;
 }
 
 message ArrEmployee{
