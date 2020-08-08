@@ -9,3 +9,34 @@
 // DIAN
 // 5. Laporan (nama/id) Employee
 // 6. LaporanAll (kosong) []Employee
+
+syntax ="proto3";
+
+package employee;
+import "google/protobuf/Empty.proto";
+
+service HRD {
+    rpc LaporanByUsername(GetEmpByName)returns(LaporanEmployee){}
+    rpc LaporanAllEmployee(google.protobuf.Empty)returns(ArrEmployee){}
+}
+
+message GetEmpByName{
+    string Name =1;
+}
+
+message LaporanEmployee {
+    string ID = 1;
+    string Absen = 2;
+    string Cuti = 3;
+    string Nama = 4;
+    string Username = 5;
+    string GajiPokok = 6;
+    string TotalGaji = 7;
+    string TunjanganMakan = 8;
+    string TunjanganTransport = 9;
+    string Status = 10;
+}
+
+message ArrEmployee{
+    repeated LaporanEmployee ArrLaporan = 1;
+}
