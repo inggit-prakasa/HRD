@@ -14,4 +14,8 @@ func main() {
 	//Next Edit
 	//Edit Edit Edit
 
+	//Gua juga ngedit
+
+	//Edit Punya Inggit
+
 }
