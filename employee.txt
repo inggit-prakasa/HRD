@@ -1,0 +1,12 @@
+Employee
+ID
+Absen
+Cuti
+Nama
+Username
+Password
+gajiPokok
+totalGaji
+tunjanganMakan
+tunjanganTransport
+status

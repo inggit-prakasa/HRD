@@ -1,0 +1,7 @@
+// Service
+// 1. CreateEmployee (Employee) string
+// 2. ReadEmployee (nama/id) Employee
+// 3. UpdateEmployee (Employee) Employee
+// 4. Delete (nama/id) string
+// 5. Laporan (nama/id) Employee
+// 6. LaporanAll (kosong) []Employee
