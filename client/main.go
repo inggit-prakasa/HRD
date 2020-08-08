@@ -16,6 +16,7 @@ func main() {
 
 	//Gua juga ngedit
 	//Edit Lagi
+	//dian
 
 	//Edit Punya Inggit
 }
