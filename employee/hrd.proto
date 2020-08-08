@@ -10,9 +10,9 @@
 // 5. Laporan (nama/id) Employee
 // 6. LaporanAll (kosong) []Employee
 
-syntax = "proto3";
+syntax ="proto3";
 
-package hrd;
+package employee;
 
 message Employee {
   int64 id  =1;
@@ -50,4 +50,20 @@ service manageEmp {
   rpc ReadAllEmployee (Empty) returns (AllEmployee) {}
   rpc UpdateEmployee (NameId) returns (Employee) {}
   rpc DeleteEmployee (NameId) returns (Result) {}
+  rpc LaporanByUsername(GetEmpByUsername)returns(LaporanEmployee){}
+}
+
+message GetEmpByUsername{
+    string Username =1;
+}
+
+message LaporanEmployee {
+    string ID = 1;
+    string Nama = 2;
+    string TotalGaji = 3;
+    string Status = 4;
+}
+
+message ArrEmployee{
+    repeated LaporanEmployee ArrLaporan = 1;
 }

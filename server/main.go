@@ -2,36 +2,37 @@ package main
 
 import (
 	"context"
-	hrd "github.com/inggit_prakasa/HRD/HRD/employee"
-	"google.golang.org/grpc"
 	"log"
 	"net"
+
+	employee "github.com/inggit_prakasa/HRD/employee"
+	"google.golang.org/grpc"
 )
 
 const (
-	port = ":50051"
+	port = ":8080"
 )
 
 type server struct {
-	hrd.UnimplementedManageEmpServer
+	employee.UnimplementedManageEmpServer
 }
 
-type employee struct {
-	id int64
-	absen int64
-	cuti int64
-	nama string
-	username string
-	password string
-	gajiPokok float32
-	totalGaji float32
-	tunjanganMakan float32
+type Cemployee struct {
+	id                 int64
+	absen              int64
+	cuti               int64
+	nama               string
+	username           string
+	password           string
+	gajiPokok          float32
+	totalGaji          float32
+	tunjanganMakan     float32
 	tunjanganTransport float32
-	status string
-	role string
+	status             string
+	role               string
 }
 
-var employeeList = []employee {
+var employeeList = []Cemployee{
 	{
 		id:                 1,
 		absen:              20,
@@ -48,8 +49,8 @@ var employeeList = []employee {
 	},
 }
 
-func (s *server) CreateEmployee(ctx context.Context, in *hrd.Employee) (*hrd.Employee, error) {
-	newEmployee := employee{
+func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
+	newEmployee := Cemployee{
 		id:                 in.Id,
 		absen:              in.Absen,
 		cuti:               in.Cuti,
@@ -64,8 +65,8 @@ func (s *server) CreateEmployee(ctx context.Context, in *hrd.Employee) (*hrd.Emp
 		role:               in.Role,
 	}
 
-	employeeList = append(employeeList,newEmployee)
-	return &hrd.Employee{
+	employeeList = append(employeeList, newEmployee)
+	return &employee.Employee{
 		Id:                 in.Id,
 		Absen:              in.Absen,
 		Cuti:               in.Cuti,
@@ -78,7 +79,18 @@ func (s *server) CreateEmployee(ctx context.Context, in *hrd.Employee) (*hrd.Emp
 		TunjanganTransport: in.TunjanganTransport,
 		Status:             in.Status,
 		Role:               in.Role,
-	},nil
+	}, nil
+}
+
+func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpByUsername) (*employee.LaporanEmployee, error) {
+
+	EmployeeByUsername := &employee.LaporanEmployee{
+		ID:        "string",
+		Nama:      "string",
+		TotalGaji: "string",
+		Status:    "string",
+	}
+	return EmployeeByUsername, nil
 }
 
 func main() {
@@ -87,8 +99,10 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	hrd.RegisterManageEmpServer(s,&server{})
+	employee.RegisterManageEmpServer(s,&server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
+
+
