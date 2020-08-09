@@ -36,7 +36,7 @@ message AllEmployee {
 message Empty {}
 
 message Result {
-  Employee response = 1;
+  string response = 1;
 }
 
 message NameId {
@@ -44,26 +44,30 @@ message NameId {
   string name = 2;
 }
 
-service manageEmp {
-  rpc CreateEmployee (Employee) returns (Employee) {}
-  rpc ReadEmployee (NameId) returns (Employee) {}
-  rpc ReadAllEmployee (Empty) returns (AllEmployee) {}
-  rpc UpdateEmployee (NameId) returns (Employee) {}
-  rpc DeleteEmployee (NameId) returns (Result) {}
-  rpc LaporanByUsername(GetEmpByUsername)returns(LaporanEmployee){}
-}
-
-message GetEmpByUsername{
-    string Username =1;
+message Username{
+  string Username =1;
 }
 
 message LaporanEmployee {
-    string ID = 1;
-    string Nama = 2;
-    string TotalGaji = 3;
-    string Status = 4;
+  string ID = 1;
+  string Nama = 2;
+  string TotalGaji = 3;
+  string Status = 4;
 }
 
 message ArrEmployee{
-    repeated LaporanEmployee ArrLaporan = 1;
+  repeated LaporanEmployee ArrLaporan = 1;
 }
+
+service manageEmp {
+  rpc CreateEmployee (Employee) returns (Employee) {}
+  rpc FindEmployee (NameId) returns (Employee) {}
+  rpc ReadEmployee (NameId) returns (Employee) {}
+  rpc ReadAllEmployee (Empty) returns (AllEmployee) {}
+  rpc UpdateEmployee (Employee) returns (Employee) {}
+  rpc DeleteEmployee (NameId) returns (Result) {}
+  rpc LaporanByUsername(Username)returns(LaporanEmployee){}
+
+  // ABSEN (Username) -> (Employee)
+}
+
