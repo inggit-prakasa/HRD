@@ -30,6 +30,7 @@ func main() {
 	fmt.Println("<< 3. Exit       >>")
 	//IF Role staff -> MENUSTAFF
 	//IF Role hrd -> MENUHRD
+	fmt.Scan(&a)
 	switch a {
 	case 1:
 		fmt.Println("--------------------------------------------------")
@@ -56,7 +57,22 @@ func main() {
 		var c int
 		fmt.Print("Input Pilihan Anda :")
 		fmt.Scanln(&c)
-		buatEmployee()
+		switch c {
+			case 1:
+				fmt.Println("Buat Employee")
+				buatEmployee()
+			case 2:
+				fmt.Println("Baca Employee")
+				bacaEmployee()
+			case 3:
+				fmt.Println("Update Employee")
+				updateEmployee()
+			case 4:
+				fmt.Println("Delete Employee")
+				deleteEmployee()
+			default:
+				break
+		}
 	default:
 		fmt.Println("Mohon input sesuai Menu ")
 		fmt.Println(" ")
@@ -65,7 +81,8 @@ func main() {
 	}
 }
 
-func buatEmployee() {
+func deleteEmployee() {
+	var nama string
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
@@ -74,23 +91,62 @@ func buatEmployee() {
 
 	emp := employee.NewManageEmpClient(conn)
 
-	r, err := emp.CreateEmployee(context.Background(), &employee.Employee{
-		Id: 123,
-		Absen:              12,
-		Cuti:               12,
-		Nama:               "staff",
-		Username:           "staff",
-		Password:           "1234",
-		GajiPokok:          120000,
-		TotalGaji:          120000,
-		TunjanganMakan:     200000,
-		TunjanganTransport: 200000,
-		Status:             "MASUK",
-		Role:               "STAFF",
+	fmt.Print("nama : ")
+	fmt.Scan(&nama)
+
+	r, err := emp.DeleteEmployee(context.Background(), &employee.NameId{
+		Name: nama,
 	})
+
+	fmt.Println(r.Response)
+}
+
+func updateEmployee() {
+
+	var (
+		nama, username, password, status, role string
+	)
+
+	fmt.Print("nama : ")
+	fmt.Scan(&nama)
+
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		log.Fatalf("Tidak bisa parkir : %v", err)
+		log.Fatalf("did not connect: %v", err)
 	}
+	defer conn.Close()
+
+	emp := employee.NewManageEmpClient(conn)
+
+	r1, err := emp.ReadEmployee(context.Background(), &employee.NameId{
+		Name: nama,
+	})
+
+	if r1.Id == 0 {
+		fmt.Println("Nama salah")
+		return
+	}
+
+	fmt.Print("Update nama")
+	fmt.Print("Nama : ")
+	fmt.Scan(&nama)
+	fmt.Print("username : ")
+	fmt.Scan(&username)
+	fmt.Print("password : ")
+	fmt.Scan(&password)
+	fmt.Print("status : ")
+	fmt.Scan(&status)
+	fmt.Print("role : ")
+	fmt.Scan(&role)
+
+	r, err := emp.UpdateEmployee(context.Background(), &employee.Employee{
+		Id: 				r1.Id,
+		Nama:				nama,
+		Username:           username,
+		Password:           password,
+		Status:             status,
+		Role:               role,
+	})
 
 	if r.Id == 0 {
 		fmt.Println("Tidak ada Karyawan")
@@ -105,19 +161,86 @@ func buatEmployee() {
 	}
 }
 
+func buatEmployee() {
+	var (
+		nama, username, password, status, role string
+	)
+
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	emp := employee.NewManageEmpClient(conn)
+
+	fmt.Print("Nama : ")
+	fmt.Scan(&nama)
+	fmt.Print("username : ")
+	fmt.Scan(&username)
+	fmt.Print("password : ")
+	fmt.Scan(&password)
+	fmt.Print("status : ")
+	fmt.Scan(&status)
+	fmt.Print("role : ")
+	fmt.Scan(&role)
+
+	r, err := emp.CreateEmployee(context.Background(), &employee.Employee{
+		Nama:				nama,
+		Username:           username,
+		Password:           password,
+		Status:             status,
+		Role:               role,
+	})
+
+	if err != nil {
+		log.Fatalf("Error : %v", err)
+	}
+
+	if r.Id == 0 {
+		fmt.Println("Tidak ada Karyawan")
+	} else {
+		fmt.Println("-------------")
+		fmt.Printf("Id : %d\n",r.Id)
+		fmt.Printf("Absen : %d\n",r.Absen)
+		fmt.Printf("Cuti : %d\n",r.Cuti)
+		fmt.Printf("Nama : %s\n",r.Nama)
+		fmt.Printf("Username : %s\n",r.Username)
+		fmt.Printf("Role : %s\n",r.Role)
+	}
+
+}
+
 func bacaEmployee() {
-	//conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
-	//if err != nil {
-	//	log.Fatalf("did not connect: %v", err)
-	//}
-	//defer conn.Close()
-	//
-	//emp := employee.NewManageEmpClient(conn)
-	//
-	//r, err := emp.ReadEmployee(context.Background(), &employee.NameId{
-	//	Id:   "1234",
-	//	Name: "staff",
-	//})
+	var (
+		nama string
+	)
+
+	fmt.Print("nama : ")
+	fmt.Scan(&nama)
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	emp := employee.NewManageEmpClient(conn)
+
+	r, err := emp.ReadEmployee(context.Background(), &employee.NameId{
+		Name: nama,
+	})
+
+	if r.Id == 0 {
+		fmt.Println("Tidak ada Karyawan")
+	} else {
+		fmt.Println("-------------")
+		fmt.Printf("Id : %d\n",r.Id)
+		fmt.Printf("Absen : %d\n",r.Absen)
+		fmt.Printf("Cuti : %d\n",r.Cuti)
+		fmt.Printf("Nama : %s\n",r.Nama)
+		fmt.Printf("Username : %s\n",r.Username)
+		fmt.Printf("Role : %s\n",r.Role)
+	}
 }
 
 // FUNGSI ABSEN

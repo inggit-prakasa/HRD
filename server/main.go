@@ -32,14 +32,6 @@ type Cemployee struct {
 	role               string
 }
 
-type empNew struct {
-	empemp *employee.Employee
-}
-
-type empNewList struct {
-	*employee.AllEmployee
-}
-
 var employeeList = []Cemployee{
 	{
 		id:                 1,
@@ -58,8 +50,11 @@ var employeeList = []Cemployee{
 }
 
 func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
+
+	idCount := int64(len(employeeList)+1)
+	//error username sama
 	newEmployee := Cemployee{
-		id:                 int64(len(employeeList)+1),
+		id:                 idCount,
 		absen:              in.Absen,
 		cuti:               in.Cuti,
 		nama:               in.Nama,
@@ -75,7 +70,7 @@ func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*em
 
 	employeeList = append(employeeList, newEmployee)
 	return &employee.Employee{
-		Id:                 in.Id,
+		Id:                 idCount,
 		Absen:              in.Absen,
 		Cuti:               in.Cuti,
 		Nama:               in.Nama,
@@ -163,6 +158,7 @@ func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*empl
 //		}
 //}}
 //
+
 func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpByUsername) (*employee.LaporanEmployee, error) {
 
 	EmployeeByUsername := &employee.LaporanEmployee{
