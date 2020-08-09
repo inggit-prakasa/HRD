@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strconv"
-
 	"log"
 
 	employee "github.com/inggit_prakasa/HRD/employee"
@@ -22,84 +20,183 @@ func main() {
 	fmt.Println("------------------------------------------------------------------------")
 	fmt.Println("Welcome To Employee Menu, For All Employee are Our utmost Priority!!")
 	fmt.Println("----------------------------------------------------------------")
-	var a int
-	fmt.Println("<< 1. Login STAFF >>")
-	// Username :
-	// Password :
-	fmt.Println("<< 2. Login HRD   >>")
-	// Username :
-	// Password :
-	fmt.Println("<< 3. Exit       >>")
-	//IF Role staff -> MENUSTAFF
-	//IF Role hrd -> MENUHRD
-	fmt.Scan(&a)
-	switch a {
-	case 1:
-		fmt.Println("--------------------------------------------------")
-		fmt.Println("               MENU STAFF                         ")
-		fmt.Println("--------------------------------------------------")
-		fmt.Println("|| 1. Absen Staff                               ||")
-		//Fungsi Absen()
-		fmt.Println("|| 2. Lihat Profile Staff Anda                  ||")
-		//Fungsi Profile()
-		fmt.Println(" ")
-		var b int
-		fmt.Print("Input Pilihan Anda :")
-		fmt.Scanln(&b)
+	var username,password string
+	fmt.Println("<<  Login Page >>")
+	fmt.Print("username : ")
+	fmt.Scan(&username)
+	fmt.Print("password : ")
+	fmt.Scan(&password)
 
-	case 2:
-		fmt.Println("--------------------------------------------------")
-		fmt.Println("               MENU HRD                           ")
-		fmt.Println("--------------------------------------------------")
-		fmt.Println("|| 1. Manajemen Employee                        ||")
-		//FUNGSI CRUD
-		fmt.Println("|| 2. Print Laporan Employee                    ||")
-		//FUNGSI LAPORAN
-		fmt.Println(" ")
-		var c int
-		fmt.Print("Input Pilihan Anda :")
-		fmt.Scanln(&c)
-		switch c {
-		case 1:
-			fmt.Println("Manajemen employee")
-		case 2:
+	emp := login(username,password)
+	switch emp.Role {
+	case "STAFF":
+		var b int
+		flag := true
+		for flag {
 			fmt.Println("--------------------------------------------------")
-			fmt.Println("            Laporan Data Staff                    ")
+			fmt.Println("                    MENU STAFF                    ")
 			fmt.Println("--------------------------------------------------")
-			fmt.Println("|| 1. Laporan Staff By Name                     ||")
-			fmt.Println("|| 2. Laporan All Staff	                     ||")
-			fmt.Println("|| 3. Back to Menu HRD				             ||")
-			fmt.Println(" ")
-			var d int
-			fmt.Print("Input Pilihan Anda :")
-			fmt.Scanln(&d)
-			switch d {
+			fmt.Println("|| 1. Absen Staff                               ||")
+			fmt.Println("|| 2. Lihat Profile Staff Anda                  ||")
+			fmt.Println("|| 3. Log Out					||")
+			fmt.Print("Input Pilihan Anda : ")
+			fmt.Scan(&b)
+			switch b {
 			case 1:
-				conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
-				if err != nil {
-					log.Fatalf("did not connect: %v", err)
-				}
-				defer conn.Close()
-				c := employee.NewManageEmpClient(conn)
-				var e string
-				fmt.Print("Input username Anda :")
-				fmt.Scanln(&e)
-				input := &employee.GetEmpByUsername{
-					Username: e,
-				}
-				result := GetEmployeeByUsername(c, input)
-				fmt.Println(result)
+				absenStaff(emp.Id)
 			case 2:
-				fmt.Println("Laporan All")
+				lihatProfile(emp.Nama)
+			case 3:
+				flag = false
+				break
 			default:
-				main()
+				fmt.Println("Pilihan anda salah coba lagi")
 			}
 		}
+		main()
+	case "HRD":
+		flag := true
+		for flag {
+			fmt.Println("--------------------------------------------------")
+			fmt.Println("                     MENU HRD                     ")
+			fmt.Println("--------------------------------------------------")
+			fmt.Println("|| 1. Create Employee    \t\t\t||")
+			fmt.Println("|| 2. Find Employee      \t\t\t||")
+			fmt.Println("|| 3. Edit Employee      \t\t\t||")
+			fmt.Println("|| 4. Delete Employee    \t\t\t||")
+			fmt.Println("|| 5. All Employee       \t\t\t||")
+			fmt.Println("|| 6. Print Laporan Employee \t\t\t||")
+			fmt.Println("|| 7. LOG OUT            \t\t\t||")
+			//FUNGSI LAPORAN
+			fmt.Println(" ")
+			fmt.Print("Input Pilihan Anda : ")
+			var c int
+			fmt.Scan(&c)
+			switch c {
+			case 1:
+				buatEmployee()
+			case 2:
+				bacaEmployee()
+			case 3:
+				updateEmployee()
+			case 4:
+				deleteEmployee()
+			case 5:
+				bacaAllEmployee()
+			case 6:
+				fmt.Println("--------------------------------------------------")
+				fmt.Println("            Laporan Data Staff                    ")
+				fmt.Println("--------------------------------------------------")
+				fmt.Println("|| 1. Laporan Staff By Name                     ||")
+				fmt.Println("|| 2. Laporan All Staff	                     ||")
+				fmt.Println("|| 3. Back to Menu HRD				             ||")
+				fmt.Println(" ")
+				var d int
+				fmt.Print("Input Pilihan Anda : ")
+				fmt.Scanln(&d)
+				switch d {
+				case 1:
+					conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+					if err != nil {
+						log.Fatalf("did not connect: %v", err)
+					}
+					defer conn.Close()
+					//c := employee.NewManageEmpClient(conn)
+					var e string
+					fmt.Print("Input username Anda :")
+					fmt.Scanln(&e)
+					//input := &employee.GetEmpByUsername{
+					//	Username: e,
+					//}
+					//result := GetEmployeeByUsername(c, input)
+					//fmt.Println(result)
+				case 2:
+					fmt.Println("Laporan All")
+				default:
+					main()
+				}
+			case 7:
+				flag = false
+				break
+			}
+		}
+		main()
 	default:
-		fmt.Println("Mohon input sesuai Menu ")
-		fmt.Println(" ")
+		fmt.Println("Login gagal")
 		main()
 
+	}
+}
+
+func absenStaff(id int64) {
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	emp := employee.NewManageEmpClient(conn)
+
+	r, err := emp.Absen(context.Background(), &employee.Employeeid{
+		Id: id,
+	})
+
+	fmt.Println("Anda telah absen : " , r.Response)
+}
+
+func lihatProfile(nama string) {
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	emp := employee.NewManageEmpClient(conn)
+
+	r, err := emp.ReadEmployee(context.Background(), &employee.NameId{
+		Name: nama,
+	})
+	fmt.Println(r)
+	fmt.Println("----PROFILE-----")
+	fmt.Println("Nama \t\t:",r.Nama)
+	fmt.Println("Absen \t\t:", r.Absen)
+	fmt.Println("Cuti \t\t:", r.Cuti)
+	fmt.Println("Gaji Pokok \t:", r.GajiPokok)
+	fmt.Println("Role \t\t:", r.Role)
+	fmt.Println("Total Gaji \t:", r.TotalGaji)
+}
+
+func login(username string, password string) *employee.Employee {
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	emp := employee.NewManageEmpClient(conn)
+
+	r, err := emp.Login(context.Background(), &employee.DataLogin{
+		Username: username,
+		Password: password,
+	})
+
+	return r
+}
+
+func bacaAllEmployee() {
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+
+	emp := employee.NewManageEmpClient(conn)
+
+	r, err := emp.ReadAllEmployee(context.Background(), &employee.Empty{})
+
+	for i:=0; i < len(r.Employes) ;i++ {
+		fmt.Println(r.Employes[i].Id)
+		fmt.Println(r.Employes[i].Nama)
 	}
 }
 
@@ -124,7 +221,6 @@ func deleteEmployee() {
 }
 
 func updateEmployee() {
-
 	var (
 		nama, username, password, status, role string
 	)
@@ -265,22 +361,22 @@ func bacaEmployee() {
 	}
 }
 
-func GetEmployeeByUsername(c employee.ManageEmpClient, input *employee.GetEmpByUsername) string {
-	resp, err := c.LaporanByUsername(context.Background(), input)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-
-	return "Id : \t \t \t" + strconv.FormatInt(resp.Id, 10) + "\n" +
-		"Nama : \t \t \t" + resp.Nama + "\n" +
-		"Username : \t \t" + resp.Username + "\n" +
-		"Gaji Pokok:\t \t" + fmt.Sprintf("%f", resp.GajiPokok) + "\n" +
-		"Tunjangan makan:\t" + fmt.Sprintf("%f", resp.TunjanganMakan) + "\n" +
-		"Tunjangan Transport\t:" + fmt.Sprintf("%f", resp.TunjanganTransport) + "\n" +
-		"Total Gaji :\t\t" + fmt.Sprintf("%f", resp.TotalGaji) + "\n" +
-		"Status :\t \t \t " + resp.Status + "\n" +
-		"Role :\t \t \t" + resp.Role
-}
+//func GetEmployeeByUsername(c employee.ManageEmpClient, input *employee.GetEmpByUsername) string {
+//	resp, err := c.LaporanByUsername(context.Background(), input)
+//	if err != nil {
+//		log.Fatalf(err.Error())
+//	}
+//
+//	return "Id : \t \t \t" + strconv.FormatInt(resp.Id, 10) + "\n" +
+//		"Nama : \t \t \t" + resp.Nama + "\n" +
+//		"Username : \t \t" + resp.Username + "\n" +
+//		"Gaji Pokok:\t \t" + fmt.Sprintf("%f", resp.GajiPokok) + "\n" +
+//		"Tunjangan makan:\t" + fmt.Sprintf("%f", resp.TunjanganMakan) + "\n" +
+//		"Tunjangan Transport\t:" + fmt.Sprintf("%f", resp.TunjanganTransport) + "\n" +
+//		"Total Gaji :\t\t" + fmt.Sprintf("%f", resp.TotalGaji) + "\n" +
+//		"Status :\t \t \t " + resp.Status + "\n" +
+//		"Role :\t \t \t" + resp.Role
+//}
 
 // FUNGSI ABSEN
 // Koneksi ke GRPC

@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	employee "github.com/inggit_prakasa/HRD/employee"
+	"google.golang.org/grpc"
 	"log"
 	"net"
 	"os"
 	"strconv"
-	"strings"
-
-	employee "github.com/inggit_prakasa/HRD/employee"
-	"google.golang.org/grpc"
 )
 
 const (
@@ -21,79 +19,78 @@ type server struct {
 	employee.UnimplementedManageEmpServer
 }
 
-type Cemployee struct {
-	id                 int64
-	absen              int64
-	cuti               int64
-	nama               string
-	username           string
-	password           string
-	gajiPokok          float32
-	totalGaji          float32
-	tunjanganMakan     float32
-	tunjanganTransport float32
-	status             string
-	role               string
-}
-
-var employeeList = []Cemployee{
+var employeeList = []*employee.Employee{
 	{
-		id:                 1,
-		absen:              20,
-		cuti:               2,
-		nama:               "Saepul",
-		username:           "staff",
-		password:           "1234",
-		gajiPokok:          3000000,
-		totalGaji:          0,
-		tunjanganMakan:     400000,
-		tunjanganTransport: 500000,
-		status:             "MASUK",
-		role:               "STAFF",
+		Id:                 1,
+		Absen:              20,
+		Cuti:               2,
+		Nama:               "Saepul",
+		Username:           "staff",
+		Password:           "1234",
+		GajiPokok:          3000000,
+		TotalGaji:          0,
+		TunjanganMakan:     400000,
+		TunjanganTransport: 500000,
+		Status:             "MASUK",
+		Role:               "STAFF",
+	},
+	{
+		Id:                 2,
+		Absen:              20,
+		Cuti:               2,
+		Nama:               "Saepul",
+		Username:           "hrd",
+		Password:           "1234",
+		GajiPokok:          3000000,
+		TotalGaji:          0,
+		TunjanganMakan:     400000,
+		TunjanganTransport: 500000,
+		Status:             "MASUK",
+		Role:               "HRD",
 	},
 }
 
-func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
-
-	idCount := int64(len(employeeList) + 1)
-	//error username sama
-	newEmployee := Cemployee{
-		id:                 int64(len(employeeList) + 1),
-		absen:              in.Absen,
-		cuti:               in.Cuti,
-		nama:               in.Nama,
-		username:           in.Username,
-		password:           in.Password,
-		gajiPokok:          in.GajiPokok,
-		totalGaji:          in.TotalGaji,
-		tunjanganMakan:     in.TunjanganMakan,
-		tunjanganTransport: in.TunjanganTransport,
-		status:             in.Status,
-		role:               in.Role,
+func (s *server) Login(ctx context.Context, in *employee.DataLogin) (*employee.Employee, error) {
+	for i:= 0; i < len(employeeList); i++ {
+		if employeeList[i].Username == in.Username && employeeList[i].Password == in.Password {
+			return employeeList[i],nil
+		}
 	}
 
-	employeeList = append(employeeList, newEmployee)
 	return &employee.Employee{
-		Id:                 idCount,
-		Absen:              in.Absen,
-		Cuti:               in.Cuti,
-		Nama:               in.Nama,
-		Username:           in.Username,
-		Password:           in.Password,
-		GajiPokok:          in.GajiPokok,
-		TotalGaji:          in.TotalGaji,
-		TunjanganMakan:     in.TunjanganMakan,
-		TunjanganTransport: in.TunjanganTransport,
-		Status:             in.Status,
-		Role:               in.Role,
-	}, nil
+		Status: "User tidak ditemukan",
+	},nil
+}
+
+func (s *server) Absen(ctx context.Context, in *employee.Employeeid) (*employee.Result, error) {
+	for i:= 0; i < len(employeeList); i++ {
+		if employeeList[i].Id == in.Id {
+			employeeList[i].Absen += 1
+			return &employee.Result{Response: strconv.FormatInt(employeeList[i].Absen, 10)},nil
+		}
+	}
+
+	return &employee.Result{Response: "GAGAL"},nil
+}
+
+func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
+	idCount := int64(len(employeeList) + 1)
+	//error username sama
+	employeeList = append(employeeList, in)
+	employeeList[len(employeeList)-1].Id = idCount
+	employeeList[len(employeeList)-1].Absen = 20
+	employeeList[len(employeeList)-1].TunjanganMakan = 400000
+	employeeList[len(employeeList)-1].TunjanganTransport = 800000
+	employeeList[len(employeeList)-1].GajiPokok = 1000000
+
+	return employeeList[len(employeeList)-1], nil
 }
 
 func (s *server) ReadEmployee(ctx context.Context, in *employee.NameId) (*employee.Employee, error) {
 	flag := false
 	index := 0
 	for i := 0; i < len(employeeList); i++ {
-		if employeeList[i].nama == in.Name {
+		if employeeList[i].Nama == in.Name {
 			index = i
 			flag = true
 			break
@@ -101,20 +98,7 @@ func (s *server) ReadEmployee(ctx context.Context, in *employee.NameId) (*employ
 	}
 
 	if flag {
-		return &employee.Employee{
-			Id:                 employeeList[index].id,
-			Absen:              employeeList[index].absen,
-			Cuti:               employeeList[index].cuti,
-			Nama:               employeeList[index].nama,
-			Username:           employeeList[index].username,
-			Password:           employeeList[index].password,
-			GajiPokok:          employeeList[index].gajiPokok,
-			TotalGaji:          employeeList[index].totalGaji,
-			TunjanganMakan:     employeeList[index].tunjanganMakan,
-			TunjanganTransport: employeeList[index].tunjanganTransport,
-			Status:             employeeList[index].status,
-			Role:               employeeList[index].role,
-		}, nil
+		return employeeList[index], nil
 	} else {
 		return nil, nil
 	}
@@ -137,11 +121,15 @@ func (s *server) UpdateEmployee(ctx context.Context, in *employee.Employee) (*em
 	}, nil
 }
 
+func (s *server) ReadAllEmployee(ctx context.Context, in *employee.Empty) (*employee.AllEmployee, error) {
+	return &employee.AllEmployee{Employes: employeeList},nil
+}
+
 func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*employee.Result, error) {
 	flag := false
 
 	for i := 0; i < len(employeeList); i++ {
-		if employeeList[i].nama == in.Name {
+		if employeeList[i].Nama == in.Name {
 			employeeList = append(employeeList[:i], employeeList[i+1:]...)
 			flag = true
 			break
@@ -155,48 +143,40 @@ func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*empl
 	}
 }
 
-//FUNC ABSEN(ctx, in *user) (*employee.Employee) {
-// for _,emps {
-//		if username=emps.id{
-//			returns ---
-//		}
-//}}
+//func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpByUsername) (*employee.Employee, error) {
+//	var EmployeeByUsername *employee.Employee
+//	flag := true
+//	for _, Cemployee := range employeeList {
+//		if strings.EqualFold(Cemployee.username, input.Username) {
+//			flag = false
+//			tunjanganMakanTemp := Cemployee.tunjanganMakan * (float32(Cemployee.absen) / 22.0)
+//			tunjanganTransportTemp := Cemployee.tunjanganTransport * (float32(Cemployee.absen) / 22.0)
+//			gajiTotalTemp := Cemployee.gajiPokok + tunjanganMakanTemp + tunjanganTransportTemp
+//			EmployeeByUsername = &employee.Employee{
+//				Id:                 Cemployee.id,
+//				Absen:              Cemployee.absen,
+//				Cuti:               Cemployee.cuti,
+//				Nama:               Cemployee.nama,
+//				Username:           Cemployee.username,
+//				Password:           Cemployee.password,
+//				GajiPokok:          Cemployee.gajiPokok,
+//				TotalGaji:          gajiTotalTemp,
+//				TunjanganMakan:     tunjanganMakanTemp,
+//				TunjanganTransport: tunjanganTransportTemp,
+//				Status:             Cemployee.status,
+//				Role:               Cemployee.role,
+//			}
+//			writeStringToFile(EmployeeByUsername)
+//			break
 //
-
-func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpByUsername) (*employee.Employee, error) {
-	var EmployeeByUsername *employee.Employee
-	flag := true
-	for _, Cemployee := range employeeList {
-		if strings.EqualFold(Cemployee.username, input.Username) {
-			flag = false
-			tunjanganMakanTemp := Cemployee.tunjanganMakan * (float32(Cemployee.absen) / 22.0)
-			tunjanganTransportTemp := Cemployee.tunjanganTransport * (float32(Cemployee.absen) / 22.0)
-			gajiTotalTemp := Cemployee.gajiPokok + tunjanganMakanTemp + tunjanganTransportTemp
-			EmployeeByUsername = &employee.Employee{
-				Id:                 Cemployee.id,
-				Absen:              Cemployee.absen,
-				Cuti:               Cemployee.cuti,
-				Nama:               Cemployee.nama,
-				Username:           Cemployee.username,
-				Password:           Cemployee.password,
-				GajiPokok:          Cemployee.gajiPokok,
-				TotalGaji:          gajiTotalTemp,
-				TunjanganMakan:     tunjanganMakanTemp,
-				TunjanganTransport: tunjanganTransportTemp,
-				Status:             Cemployee.status,
-				Role:               Cemployee.role,
-			}
-			writeStringToFile(EmployeeByUsername)
-			break
-
-		}
-	}
-	if flag {
-		return EmployeeByUsername, nil
-	} else {
-		return EmployeeByUsername, nil
-	}
-}
+//		}
+//	}
+//	if flag {
+//		return EmployeeByUsername, nil
+//	} else {
+//		return EmployeeByUsername, nil
+//	}
+//}
 
 func main() {
 	lis, err := net.Listen("tcp", port)

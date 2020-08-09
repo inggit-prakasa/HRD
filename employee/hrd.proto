@@ -21,8 +21,8 @@ message Employee {
   string nama = 4;
   string username = 5;
   string password = 6;
-  float gajiPokok = 7;
-  float totalGaji = 8;
+  int64 gajiPokok = 7;
+  int64 totalGaji = 8;
   float tunjanganMakan = 9;
   float tunjanganTransport = 10;
   string status = 11;
@@ -59,6 +59,15 @@ message ArrEmployee{
   repeated LaporanEmployee ArrLaporan = 1;
 }
 
+message dataLogin{
+  string username = 1;
+  string password = 2;
+}
+
+message Employeeid{
+  int64 id = 1;
+}
+
 service manageEmp {
   rpc CreateEmployee (Employee) returns (Employee) {}
   rpc FindEmployee (NameId) returns (Employee) {}
@@ -67,6 +76,9 @@ service manageEmp {
   rpc UpdateEmployee (Employee) returns (Employee) {}
   rpc DeleteEmployee (NameId) returns (Result) {}
   rpc LaporanByUsername(Username)returns(LaporanEmployee){}
+
+  rpc Login(dataLogin) returns (Employee) {}
+  rpc Absen(Employeeid) returns (Result) {}
 
   // ABSEN (Username) -> (Employee)
 }
