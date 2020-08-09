@@ -2,8 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
+	"os"
+	"strconv"
+	"strings"
 
 	employee "github.com/inggit_prakasa/HRD/employee"
 	"google.golang.org/grpc"
@@ -54,7 +58,11 @@ func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*em
 	idCount := int64(len(employeeList)+1)
 	//error username sama
 	newEmployee := Cemployee{
+<<<<<<< HEAD
 		id:                 idCount,
+=======
+		id:                 int64(len(employeeList) + 1),
+>>>>>>> e7ed1735358503e3a4fb3166edee22d869516641
 		absen:              in.Absen,
 		cuti:               in.Cuti,
 		nama:               in.Nama,
@@ -88,7 +96,7 @@ func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*em
 func (s *server) ReadEmployee(ctx context.Context, in *employee.NameId) (*employee.Employee, error) {
 	flag := false
 	index := 0
-	for i:= 0; i<len(employeeList); i++ {
+	for i := 0; i < len(employeeList); i++ {
 		if employeeList[i].nama == in.Name {
 			index = i
 			flag = true
@@ -110,9 +118,9 @@ func (s *server) ReadEmployee(ctx context.Context, in *employee.NameId) (*employ
 			TunjanganTransport: employeeList[index].tunjanganTransport,
 			Status:             employeeList[index].status,
 			Role:               employeeList[index].role,
-		},nil
+		}, nil
 	} else {
-		return nil,nil
+		return nil, nil
 	}
 }
 
@@ -130,13 +138,13 @@ func (s *server) UpdateEmployee(ctx context.Context, in *employee.Employee) (*em
 		TunjanganTransport: in.TunjanganTransport,
 		Status:             in.Status,
 		Role:               in.Role,
-	},nil
+	}, nil
 }
 
 func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*employee.Result, error) {
 	flag := false
 
-	for i:= 0; i<len(employeeList); i++ {
+	for i := 0; i < len(employeeList); i++ {
 		if employeeList[i].nama == in.Name {
 			employeeList = append(employeeList[:i], employeeList[i+1:]...)
 			flag = true
@@ -145,9 +153,9 @@ func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*empl
 	}
 
 	if flag {
-		return &employee.Result{Response: "BERHASIl"},nil
+		return &employee.Result{Response: "BERHASIl"}, nil
 	} else {
-		return &employee.Result{Response: "GAGAL"},nil
+		return &employee.Result{Response: "GAGAL"}, nil
 	}
 }
 
@@ -161,13 +169,35 @@ func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*empl
 
 func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpByUsername) (*employee.LaporanEmployee, error) {
 
-	EmployeeByUsername := &employee.LaporanEmployee{
-		ID:        "string",
-		Nama:      "string",
-		TotalGaji: "string",
-		Status:    "string",
+	var EmployeeByUsername empNew
+	flag := true
+	for _, Cemployee := range employeeList {
+		if strings.EqualFold(Cemployee.username, input.Username) {
+			flag = false
+			EmployeeByUsername = &employee.Employee{
+				Id:                 Cemployee.id,
+				Absen:              Cemployee.absen,
+				Cuti:               Cemployee.cuti,
+				Nama:               Cemployee.nama,
+				Username:           Cemployee.username,
+				Password:           Cemployee.password,
+				GajiPokok:          Cemployee.gajiPokok,
+				TotalGaji:          Cemployee.totalGaji,
+				TunjanganMakan:     Cemployee.tunjanganMakan,
+				TunjanganTransport: Cemployee.tunjanganTransport,
+				Status:             Cemployee.status,
+				Role:               Cemployee.role,
+			}
+			writeStringToFile(EmployeeByUsername)
+			break
+
+		}
 	}
-	return EmployeeByUsername, nil
+	if flag {
+		return EmployeeByUsername, nil
+	} else {
+		return EmployeeByUsername, nil
+	}
 }
 
 func main() {
@@ -177,10 +207,30 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
-	employee.RegisterManageEmpServer(s,&server{})
+	employee.RegisterManageEmpServer(s, &server{})
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
 
+func writeStringToFile(emp *employee.Employee) {
+	f, err := os.Create("Laporan.txt")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	string := "Id :" + strconv.FormatInt(emp.Id, 10)
 
+	l, err := f.WriteString(string)
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+	fmt.Println(l, "bytes written successfully")
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}

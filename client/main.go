@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
+
+	"log"
 
 	employee "github.com/inggit_prakasa/HRD/employee"
 	"google.golang.org/grpc"
-	"log"
 )
 
 const (
@@ -58,20 +60,40 @@ func main() {
 		fmt.Print("Input Pilihan Anda :")
 		fmt.Scanln(&c)
 		switch c {
+		case 1:
+			fmt.Println("Manajemen employee")
+		case 2:
+			fmt.Println("--------------------------------------------------")
+			fmt.Println("            Laporan Data Staff                    ")
+			fmt.Println("--------------------------------------------------")
+			fmt.Println("|| 1. Laporan Staff By Name                     ||")
+			fmt.Println("|| 2. Laporan All Staff	                     ||")
+			fmt.Println("|| 3. Back to Menu HRD				             ||")
+			fmt.Println(" ")
+			var d int
+			fmt.Print("Input Pilihan Anda :")
+			fmt.Scanln(&d)
+			switch d {
 			case 1:
-				fmt.Println("Buat Employee")
-				buatEmployee()
+				conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+				if err != nil {
+					log.Fatalf("did not connect: %v", err)
+				}
+				defer conn.Close()
+				c := employee.NewManageEmpClient(conn)
+				var e string
+				fmt.Print("Input username Anda :")
+				fmt.Scanln(&e)
+				input := &employee.GetEmpByUsername{
+					Username: e,
+				}
+				result := GetEmployeeByUsername(c, input)
+				fmt.Println(result)
 			case 2:
-				fmt.Println("Baca Employee")
-				bacaEmployee()
-			case 3:
-				fmt.Println("Update Employee")
-				updateEmployee()
-			case 4:
-				fmt.Println("Delete Employee")
-				deleteEmployee()
+				fmt.Println("Laporan All")
 			default:
-				break
+				main()
+			}
 		}
 	default:
 		fmt.Println("Mohon input sesuai Menu ")
@@ -140,24 +162,24 @@ func updateEmployee() {
 	fmt.Scan(&role)
 
 	r, err := emp.UpdateEmployee(context.Background(), &employee.Employee{
-		Id: 				r1.Id,
-		Nama:				nama,
-		Username:           username,
-		Password:           password,
-		Status:             status,
-		Role:               role,
+		Id:       r1.Id,
+		Nama:     nama,
+		Username: username,
+		Password: password,
+		Status:   status,
+		Role:     role,
 	})
 
 	if r.Id == 0 {
 		fmt.Println("Tidak ada Karyawan")
 	} else {
 		fmt.Println("-------------")
-		fmt.Printf("Id : %d\n",r.Id)
-		fmt.Printf("Absen : %d\n",r.Absen)
-		fmt.Printf("Cuti : %d\n",r.Cuti)
-		fmt.Printf("Nama : %s\n",r.Nama)
-		fmt.Printf("Username : %s\n",r.Username)
-		fmt.Printf("Role : %s\n",r.Role)
+		fmt.Printf("Id : %d\n", r.Id)
+		fmt.Printf("Absen : %d\n", r.Absen)
+		fmt.Printf("Cuti : %d\n", r.Cuti)
+		fmt.Printf("Nama : %s\n", r.Nama)
+		fmt.Printf("Username : %s\n", r.Username)
+		fmt.Printf("Role : %s\n", r.Role)
 	}
 }
 
@@ -186,11 +208,11 @@ func buatEmployee() {
 	fmt.Scan(&role)
 
 	r, err := emp.CreateEmployee(context.Background(), &employee.Employee{
-		Nama:				nama,
-		Username:           username,
-		Password:           password,
-		Status:             status,
-		Role:               role,
+		Nama:     nama,
+		Username: username,
+		Password: password,
+		Status:   status,
+		Role:     role,
 	})
 
 	if err != nil {
@@ -201,12 +223,12 @@ func buatEmployee() {
 		fmt.Println("Tidak ada Karyawan")
 	} else {
 		fmt.Println("-------------")
-		fmt.Printf("Id : %d\n",r.Id)
-		fmt.Printf("Absen : %d\n",r.Absen)
-		fmt.Printf("Cuti : %d\n",r.Cuti)
-		fmt.Printf("Nama : %s\n",r.Nama)
-		fmt.Printf("Username : %s\n",r.Username)
-		fmt.Printf("Role : %s\n",r.Role)
+		fmt.Printf("Id : %d\n", r.Id)
+		fmt.Printf("Absen : %d\n", r.Absen)
+		fmt.Printf("Cuti : %d\n", r.Cuti)
+		fmt.Printf("Nama : %s\n", r.Nama)
+		fmt.Printf("Username : %s\n", r.Username)
+		fmt.Printf("Role : %s\n", r.Role)
 	}
 
 }
@@ -234,19 +256,35 @@ func bacaEmployee() {
 		fmt.Println("Tidak ada Karyawan")
 	} else {
 		fmt.Println("-------------")
-		fmt.Printf("Id : %d\n",r.Id)
-		fmt.Printf("Absen : %d\n",r.Absen)
-		fmt.Printf("Cuti : %d\n",r.Cuti)
-		fmt.Printf("Nama : %s\n",r.Nama)
-		fmt.Printf("Username : %s\n",r.Username)
-		fmt.Printf("Role : %s\n",r.Role)
+		fmt.Printf("Id : %d\n", r.Id)
+		fmt.Printf("Absen : %d\n", r.Absen)
+		fmt.Printf("Cuti : %d\n", r.Cuti)
+		fmt.Printf("Nama : %s\n", r.Nama)
+		fmt.Printf("Username : %s\n", r.Username)
+		fmt.Printf("Role : %s\n", r.Role)
 	}
+}
+
+func GetEmployeeByUsername(c employee.ManageEmpClient, input *employee.GetEmpByUsername) string {
+	resp, err := c.LaporanByUsername(context.Background(), input)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	return "Id : \t \t \t" + strconv.FormatInt(resp.Id, 10) + "\n" +
+		"Nama : \t \t \t" + resp.Nama + "\n" +
+		"Username : \t \t" + resp.Username + "\n" +
+		"Gaji Pokok:\t \t" + fmt.Sprintf("%f", resp.GajiPokok) + "\n" +
+		"Tunjangan makan:\t" + fmt.Sprintf("%f", resp.TunjanganMakan) + "\n" +
+		"Tunjangan Transport\t:" + fmt.Sprintf("%f", resp.TunjanganTransport) + "\n" +
+		"Total Gaji :\t\t" + fmt.Sprintf("%f", resp.TotalGaji) + "\n" +
+		"Status :\t \t \t " + resp.Status + "\n" +
+		"Role :\t \t \t" + resp.Role
 }
 
 // FUNGSI ABSEN
 // Koneksi ke GRPC
 //
-
 
 //TIARA
 
@@ -254,37 +292,3 @@ func bacaEmployee() {
 //PILIHAN STAFF
 //MENUSTAFF || MENUHRD
 //FUNGSISTAFF || HRD
-//	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
-//	if err != nil {
-//		log.Fatalf("did not connect: %v", err)
-//	}
-//	defer conn.Close()
-//	c := employee.NewHRDClient(conn)
-//
-//	variablelbuatloopmenu := true
-//
-//	for variablelbuatloopmenu {
-//		fmt.Println("Laporan By Username")
-//		var username string
-//		fmt.Scan(&username)
-//
-//		input := &employee.GetEmpByUsername{
-//			Username: username,
-//		}
-//		result := GetEmployeeByUsername(c, input)
-//		fmt.Println(result)
-//		variablelbuatloopmenu = false
-//	}
-//}
-
-//func GetEmployeeByUsername(c employee.HRDClient, input *employee.GetEmpByUsername) string {
-//	resp, err := c.LaporanByUsername(context.Background(), input)
-//	if err != nil {
-//		log.Fatalf(err.Error())
-//	}
-//
-//	return "Id :" + resp.ID + "\n" +
-//		"Nama :" + resp.Nama + "\n" +
-//		"Total Gaji :" + resp.TotalGaji + "\n" +
-//		"Status :" + resp.Status
-//}
