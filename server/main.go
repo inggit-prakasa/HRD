@@ -55,14 +55,10 @@ var employeeList = []Cemployee{
 
 func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
 
-	idCount := int64(len(employeeList)+1)
+	idCount := int64(len(employeeList) + 1)
 	//error username sama
 	newEmployee := Cemployee{
-<<<<<<< HEAD
-		id:                 idCount,
-=======
 		id:                 int64(len(employeeList) + 1),
->>>>>>> e7ed1735358503e3a4fb3166edee22d869516641
 		absen:              in.Absen,
 		cuti:               in.Cuti,
 		nama:               in.Nama,
@@ -167,13 +163,15 @@ func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*empl
 //}}
 //
 
-func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpByUsername) (*employee.LaporanEmployee, error) {
-
-	var EmployeeByUsername empNew
+func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpByUsername) (*employee.Employee, error) {
+	var EmployeeByUsername *employee.Employee
 	flag := true
 	for _, Cemployee := range employeeList {
 		if strings.EqualFold(Cemployee.username, input.Username) {
 			flag = false
+			tunjanganMakanTemp := Cemployee.tunjanganMakan * (float32(Cemployee.absen) / 22.0)
+			tunjanganTransportTemp := Cemployee.tunjanganTransport * (float32(Cemployee.absen) / 22.0)
+			gajiTotalTemp := Cemployee.gajiPokok + tunjanganMakanTemp + tunjanganTransportTemp
 			EmployeeByUsername = &employee.Employee{
 				Id:                 Cemployee.id,
 				Absen:              Cemployee.absen,
@@ -182,9 +180,9 @@ func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpBy
 				Username:           Cemployee.username,
 				Password:           Cemployee.password,
 				GajiPokok:          Cemployee.gajiPokok,
-				TotalGaji:          Cemployee.totalGaji,
-				TunjanganMakan:     Cemployee.tunjanganMakan,
-				TunjanganTransport: Cemployee.tunjanganTransport,
+				TotalGaji:          gajiTotalTemp,
+				TunjanganMakan:     tunjanganMakanTemp,
+				TunjanganTransport: tunjanganTransportTemp,
 				Status:             Cemployee.status,
 				Role:               Cemployee.role,
 			}
@@ -214,14 +212,27 @@ func main() {
 }
 
 func writeStringToFile(emp *employee.Employee) {
-	f, err := os.Create("Laporan.txt")
+	var str string
+	str = "============== Laporan" + emp.Nama + "================" + "\n" +
+		"Id  \t \t :" + strconv.FormatInt(emp.Id, 10) + "\n" +
+		"Absen \t \t:" + strconv.FormatInt(emp.Absen, 10) + "\n" +
+		"Cuti  \t \t:" + strconv.FormatInt(emp.Absen, 10) + "\n" +
+		"Nama  \t \t:" + emp.Nama + "\n" +
+		"Username  \t \t:" + emp.Username + "\n" +
+		"Gaji Pokok  \t \t:" + fmt.Sprintf("%.3f", emp.GajiPokok) + "\n" +
+		"Gaji Total  \t \t:" + fmt.Sprintf("%.3f", emp.TotalGaji) + "\n" +
+		"Tunjangan Makan  \t :" + fmt.Sprintf("%.3f", emp.TunjanganMakan) + "\n" +
+		"Tunjangan Transport  :" + fmt.Sprintf("%.3f", emp.TunjanganTransport) + "\n" +
+		"Status   \t:" + emp.Status + "\n" +
+		"Role  \t \t:" + emp.Role + "\n" + ""
+
+	f, err := os.Create("laporan/" + emp.Nama + ".pdf")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	string := "Id :" + strconv.FormatInt(emp.Id, 10)
 
-	l, err := f.WriteString(string)
+	l, err := f.WriteString(str)
 	if err != nil {
 		fmt.Println(err)
 		f.Close()
