@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	//employee "github.com/inggit_prakasa/HRD/employee"
-	"HRD/employee"
+	employee "github.com/inggit_prakasa/HRD/employee"
+	//"HRD/employee"
 
 	"google.golang.org/grpc"
 )

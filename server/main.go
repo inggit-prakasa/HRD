@@ -2,17 +2,21 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"golang.org/x/crypto/bcrypt"
 	"strings"
 
-	//employee "github.com/inggit_prakasa/HRD/employee"
+	employee "github.com/inggit_prakasa/HRD/employee"
 	"log"
 	"net"
 	"strconv"
 
-	"HRD/employee"
+	//"HRD/employee"
 
 	"github.com/jung-kurt/gofpdf"
 	"google.golang.org/grpc"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -54,62 +58,145 @@ var employeeList = []*employee.Employee{
 	},
 }
 
+func conn() *sql.DB {
+	db, err := sql.Open("mysql","root:12345678@tcp(127.0.0.1:3306)/bootcamp")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return db
+}
+
 func (s *server) Login(ctx context.Context, in *employee.DataLogin) (*employee.Employee, error) {
-	for i := 0; i < len(employeeList); i++ {
-		if employeeList[i].Username == in.Username && employeeList[i].Password == in.Password {
-			return employeeList[i], nil
+	db := conn()
+	defer db.Close()
+
+	results, err := db.Query("SELECT * FROM employee")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for results.Next() {
+		empl := &employee.Employee{}
+		err = results.Scan(&empl.Id,&empl.Nama,&empl.Absen,&empl.Cuti,&empl.Username,&empl.Password,&empl.GajiPokok,&empl.TotalGaji,&empl.TunjanganMakan,&empl.TunjanganTransport,&empl.Role)
+		if err != nil {
+			panic(err.Error())
+		}
+
+		if (empl.Username == in.Username) && empl.Password == in.Password {
+			return empl,nil
 		}
 	}
 
-	return &employee.Employee{
-		Message: "User tidak ditemukan",
-	}, nil
+	return &employee.Employee{},nil
 }
 
 func (s *server) Absen(ctx context.Context, in *employee.Employeeid) (*employee.Result, error) {
-	for i := 0; i < len(employeeList); i++ {
-		if employeeList[i].Id == in.Id {
-			employeeList[i].Absen += 1
-			return &employee.Result{Response: strconv.FormatInt(employeeList[i].Absen, 10)}, nil
+	db := conn()
+	defer db.Close()
+
+	results, err := db.Query("SELECT id,absen FROM employee")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for results.Next() {
+		empl := &employee.Employee{}
+		err = results.Scan(&empl.Id,&empl.Absen)
+
+		if in.Id == empl.Id {
+			_, err := db.Exec("UPDATE employee SET absen = ? WHERE id = ?",empl.Absen+1,empl.Id)
+			if err != nil {
+				return &employee.Result{Response: strconv.FormatInt(empl.Absen+1, 10)},err
+			}
+			return &employee.Result{Response: strconv.FormatInt(empl.Absen+1, 10)},nil
 		}
 	}
 
-	return &employee.Result{Response: "GAGAL"}, nil
+	return &employee.Result{Response: "GAGAL"},nil
 }
 
+
 func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
-	idCount := int64(len(employeeList) + 1)
+	db := conn()
+	defer db.Close()
 
-	//error username sama
-	employeeList = append(employeeList, in)
-	employeeList[len(employeeList)-1].Id = idCount
-	employeeList[len(employeeList)-1].Absen = 20
-	employeeList[len(employeeList)-1].TunjanganMakan = 400000
-	employeeList[len(employeeList)-1].TunjanganTransport = 800000
-	employeeList[len(employeeList)-1].GajiPokok = 5000000
+	if handUsername(in.Username) {
+		return &employee.Employee{},nil
+	}
 
-	return employeeList[len(employeeList)-1], nil
+	//pass, _ := HashPassword(in.Password)
+	password1 := []byte(in.Password)
+
+	// Hashing the password with the default cost of 10
+	hashedPassword, err := bcrypt.GenerateFromPassword(password1, bcrypt.DefaultCost)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(hashedPassword))
+
+	stmt, err := db.Prepare("INSERT INTO employee (nama,username,password,role,absen,tunjanganMakan,tunjanganTransport,gajiPokok) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?)")
+
+	if err != nil {
+		return &employee.Employee{},err
+	}
+
+	absen := 20
+	tunjMakan := 400000
+	tunjTransport := 800000
+	gajiPokok := 5000000
+
+	_, err = stmt.Exec(in.Nama, in.Username, password1,in.Role,absen,tunjMakan,tunjTransport,gajiPokok)
+
+	if err != nil {
+		return &employee.Employee{},err
+	}
+
+	return &employee.Employee{
+		Id:					1,
+		Absen:              int64(absen),
+		Nama:               in.Nama,
+		Username:           in.Username,
+		Password:           in.Password,
+		GajiPokok:          int64(gajiPokok),
+		TunjanganMakan:     int64(tunjMakan),
+		TunjanganTransport: int64(tunjTransport),
+		Role:               in.Role,
+	}, nil
 }
 
 func (s *server) ReadEmployee(ctx context.Context, in *employee.NameId) (*employee.Employee, error) {
-	flag := false
-	index := 0
-	for i := 0; i < len(employeeList); i++ {
-		if employeeList[i].Nama == in.Name {
-			index = i
-			flag = true
-			break
-		}
+	db := conn()
+	defer db.Close()
+	empl := &employee.Employee{}
+	stmt, err := db.Prepare("SELECT * FROM employee WHERE nama = ?")
+
+	if err != nil {
+		panic(err.Error())
 	}
 
-	if flag {
-		return employeeList[index], nil
-	} else {
-		return nil, nil
+	err = stmt.QueryRow(in.Name).Scan(&empl.Id,&empl.Nama,&empl.Absen,&empl.Cuti,&empl.Username,&empl.Password,&empl.GajiPokok,&empl.TotalGaji,&empl.TunjanganMakan,&empl.TunjanganTransport,&empl.Role)
+
+	if err != nil {
+		return empl,nil
 	}
+
+	return empl,nil
 }
 
 func (s *server) UpdateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
+	db := conn()
+	defer db.Close()
+
+	stmt, err := db.Prepare("UPDATE employee SET nama=?, username=?, password=?, role=? WHERE id = ?")
+
+	if err != nil {
+		panic(err.Error())
+	}
+	_, err = stmt.Exec(in.Nama, in.Username, in.Password,in.Role,in.Id)
+
+	if err != nil {
+		panic(err.Error())
+	}
 	return &employee.Employee{
 		Id:                 in.Id,
 		Absen:              in.Absen,
@@ -121,37 +208,84 @@ func (s *server) UpdateEmployee(ctx context.Context, in *employee.Employee) (*em
 		TotalGaji:          in.TotalGaji,
 		TunjanganMakan:     in.TunjanganMakan,
 		TunjanganTransport: in.TunjanganTransport,
-		Message:            in.Message,
 		Role:               in.Role,
 	}, nil
 }
 
-func (s *server) ReadAllEmployee(ctx context.Context, in *employee.Empty) (*employee.AllEmployee, error) {
-	return &employee.AllEmployee{Employes: employeeList}, nil
+func SelectAllEmployee() []*employee.Employee {
+	db := conn()
+	defer db.Close()
+
+	var employeeList1 = []*employee.Employee{}
+
+	results, err := db.Query("SELECT * FROM employee")
+	if err != nil {
+		panic(err.Error()) // proper error handling instead of panic in your app
+	}
+
+	for results.Next() {
+		empl := &employee.Employee{}
+		// for each row, scan the result into our tag composite object
+		err = results.Scan(&empl.Id,&empl.Nama,&empl.Absen,&empl.Cuti,&empl.Username,&empl.Password,&empl.GajiPokok,&empl.TotalGaji,&empl.TunjanganMakan,&empl.TunjanganTransport,&empl.Role)
+		if err != nil {
+			panic(err.Error()) // proper error handling instead of panic in your app
+		}
+		// and then print out the tag's Name attribute
+		employeeList1 = append(employeeList1, empl)
+	}
+	return employeeList1
 }
 
-func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*employee.Result, error) {
-	flag := false
+func (s *server) ReadAllEmployee(ctx context.Context, in *employee.Empty) (*employee.AllEmployee, error) {
+	var employeeList1 = SelectAllEmployee()
 
-	for i := 0; i < len(employeeList); i++ {
-		if employeeList[i].Nama == in.Name {
-			employeeList = append(employeeList[:i], employeeList[i+1:]...)
-			flag = true
-			break
+	return &employee.AllEmployee{Employes: employeeList1},nil
+}
+
+func handUsername(username string) bool {
+	db := conn()
+	defer db.Close()
+
+	results, err := db.Query("SELECT id,username FROM employee")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for results.Next() {
+		empl := &employee.Employee{}
+		err = results.Scan(&empl.Id,&empl.Username)
+
+		if empl.Username == username {
+			return true
 		}
 	}
 
-	if flag {
-		return &employee.Result{Response: "BERHASIl"}, nil
-	} else {
-		return &employee.Result{Response: "GAGAL"}, nil
+	return false
+}
+
+func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*employee.Result, error) {
+	db := conn()
+	defer db.Close()
+
+	stmt, err := db.Prepare("DELETE FROM employee WHERE nama = ?")
+
+	if err != nil {
+		panic(err.Error())
 	}
+	_, err = stmt.Exec(in.Name)
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return &employee.Result{Response: "BERHASIl"}, nil
 }
 
 func (s *server) LaporanByUsername(ctx context.Context, input *employee.Username) (*employee.Employee, error) {
 	var EmployeeByUsername *employee.Employee
+	var employeeList1 = SelectAllEmployee()
 	flag := true
-	for i, empLoop := range employeeList {
+	for i, empLoop := range employeeList1 {
 		if strings.EqualFold(empLoop.Username, input.Username) {
 			flag = false
 			tunjanganMakanTemp := float64(empLoop.TunjanganMakan) * (float64(empLoop.Absen) / float64(22))
@@ -171,7 +305,7 @@ func (s *server) LaporanByUsername(ctx context.Context, input *employee.Username
 				Message:            empLoop.Message,
 				Role:               empLoop.Role,
 			}
-			employeeList[i] = EmployeeByUsername
+			employeeList1[i] = EmployeeByUsername
 			writeStaffToPdf(EmployeeByUsername)
 		}
 	}
@@ -184,10 +318,25 @@ func (s *server) LaporanByUsername(ctx context.Context, input *employee.Username
 }
 
 func (s *server) LaporanAll(ctx context.Context, fileName *employee.FileName) (*employee.AllEmployee, error) {
-	for i, empLoop := range employeeList {
+	db := conn()
+	defer db.Close()
+
+	stmt, err := db.Prepare("UPDATE employee SET totalGaji=? WHERE id = ?")
+
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var employeeList1 = SelectAllEmployee()
+	for i, empLoop := range employeeList1 {
 		tunjanganMakanTemp := float64(empLoop.TunjanganMakan) * (float64(empLoop.Absen) / float64(22))
 		tunjanganTransportTemp := float64(empLoop.TunjanganTransport) * (float64(empLoop.Absen) / float64(22))
 		gajiTotalTemp := empLoop.GajiPokok + int64(tunjanganMakanTemp) + int64(tunjanganTransportTemp)
+		_, err = stmt.Exec(gajiTotalTemp,empLoop.Id)
+
+		if err != nil {
+			panic(err.Error())
+		}
 		EmployeeTemp := &employee.Employee{
 			Id:                 empLoop.Id,
 			Absen:              empLoop.Absen,
@@ -202,7 +351,7 @@ func (s *server) LaporanAll(ctx context.Context, fileName *employee.FileName) (*
 			Message:            empLoop.Message,
 			Role:               empLoop.Role,
 		}
-		employeeList[i] = EmployeeTemp
+		employeeList1[i] = EmployeeTemp
 	}
 
 	writeAllToPdf(fileName.File)
@@ -259,7 +408,8 @@ func writeAllToPdf(namaFile string) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetFont("Arial", "", 11)
 	flag := 120
-	for i, empLoop := range employeeList {
+	var employeeList1 = SelectAllEmployee()
+	for i, empLoop := range employeeList1 {
 		if i%2 == 0 {
 			pdf.AddPage()
 			flag = 0
