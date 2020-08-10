@@ -68,6 +68,10 @@ message Employeeid{
   int64 id = 1;
 }
 
+message FileName{
+  string File =1;
+}
+
 service manageEmp {
   rpc CreateEmployee (Employee) returns (Employee) {}
   rpc FindEmployee (NameId) returns (Employee) {}
@@ -76,7 +80,7 @@ service manageEmp {
   rpc UpdateEmployee (Employee) returns (Employee) {}
   rpc DeleteEmployee (NameId) returns (Result) {}
   rpc LaporanByUsername(Username)returns(LaporanEmployee){}
-
+  rpc LaporanAll(FileName)returns(AllEmployee){}
   rpc Login(dataLogin) returns (Employee) {}
   rpc Absen(Employeeid) returns (Result) {}
 
