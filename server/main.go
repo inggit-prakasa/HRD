@@ -75,13 +75,14 @@ func (s *server) Absen(ctx context.Context, in *employee.Employeeid) (*employee.
 
 func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
 	idCount := int64(len(employeeList) + 1)
+
 	//error username sama
 	employeeList = append(employeeList, in)
 	employeeList[len(employeeList)-1].Id = idCount
 	employeeList[len(employeeList)-1].Absen = 20
 	employeeList[len(employeeList)-1].TunjanganMakan = 400000
 	employeeList[len(employeeList)-1].TunjanganTransport = 800000
-	employeeList[len(employeeList)-1].GajiPokok = 1000000
+	employeeList[len(employeeList)-1].GajiPokok = 5000000
 
 	return employeeList[len(employeeList)-1], nil
 }

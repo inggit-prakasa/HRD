@@ -23,9 +23,9 @@ message Employee {
   string password = 6;
   int64 gajiPokok = 7;
   int64 totalGaji = 8;
-  float tunjanganMakan = 9;
-  float tunjanganTransport = 10;
-  string status = 11;
+  int64 tunjanganMakan = 9;
+  int64 tunjanganTransport = 10;
+  string message = 11;
   string role = 12;
 }
 
