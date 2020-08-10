@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 
 	//employee "github.com/inggit_prakasa/HRD/employee"
 	"HRD/employee"
@@ -338,9 +339,9 @@ func laporanEmployee() {
 	fmt.Println("--------------------------------------------------")
 	fmt.Println("            Laporan Data Staff                    ")
 	fmt.Println("--------------------------------------------------")
-	fmt.Println("|| 1. Laporan Staff By Name\t\t\t||")
+	fmt.Println("|| 1. Laporan Staff By Username\t\t\t||")
 	fmt.Println("|| 2. Laporan All Staff\t\t\t\t||")
-	fmt.Println("|| 3. Exit\t\t\t\t\t||")
+	fmt.Println("|| 3. Logout\t\t\t\t\t||")
 	fmt.Println("------------ Please Press [1/2/3] --------------- ")
 	fmt.Println(" ")
 	var d int
@@ -369,7 +370,7 @@ func singleStaffReport() {
 	c := employee.NewManageEmpClient(conn)
 	var e string
 	fmt.Print("Input username Anda :")
-	fmt.Scanln(&e)
+	fmt.Scan(&e)
 	input := &employee.Username{
 		Username: e,
 	}
@@ -386,7 +387,7 @@ func allStaffReport() {
 	c := employee.NewManageEmpClient(conn)
 	var inp string
 	fmt.Print("Input Nama File Laporan :")
-	fmt.Scanln(&inp)
+	fmt.Scan(&inp)
 	input := &employee.FileName{
 		File: inp,
 	}
@@ -400,15 +401,21 @@ func GetEmployeeByUsername(c employee.ManageEmpClient, input *employee.Username)
 		log.Fatalf(err.Error())
 	}
 
-	return "Id  \t \t \t:" + strconv.FormatInt(resp.Id, 10) + "\n" +
-		"Nama  \t \t \t:" + resp.Nama + "\n" +
-		"Username  \t \t:" + resp.Username + "\n" +
-		"Gaji Pokok\t \t:" + fmt.Sprintf("%.2f", resp.GajiPokok) + "\n" +
-		"Tunjangan makan\t:" + fmt.Sprintf("%.2f", resp.TunjanganMakan) + "\n" +
-		"Tunjangan Transport\t:" + fmt.Sprintf("%.2f", resp.TunjanganTransport) + "\n" +
-		"Total Gaji \t\t:" + fmt.Sprintf("%.2f", resp.TotalGaji) + "\n" +
-		"Role \t \t \t:" + resp.Role +
-		"Message \t \t :" + resp.Message + "\n"
+	strmsg := "Username Not Found, Please Insert Your Username"
+	if strings.EqualFold(resp.Message, strmsg) {
+		return strmsg
+	} else {
+		return "===Laporan Employee" + resp.Nama + "===\n" +
+			"Id  \t \t \t:" + strconv.FormatInt(resp.Id, 10) + "\n" +
+			"Nama  \t \t \t:" + resp.Nama + "\n" +
+			"Username  \t \t:" + resp.Username + "\n" +
+			"Gaji Pokok\t \t:" + strconv.FormatInt(resp.GajiPokok, 10) + "\n" +
+			"Tunjangan makan\t\t:" + strconv.FormatInt(resp.TunjanganMakan, 10) + "\n" +
+			"Tunjangan Transport\t:" + strconv.FormatInt(resp.TunjanganTransport, 10) + "\n" +
+			"Total Gaji \t\t:" + strconv.FormatInt(resp.TotalGaji, 10) + "\n" +
+			"Role \t \t \t:" + resp.Role + "\n"
+	}
+
 }
 
 func LaporanAllEmployee(c employee.ManageEmpClient, input *employee.FileName) string {
@@ -421,15 +428,16 @@ func LaporanAllEmployee(c employee.ManageEmpClient, input *employee.FileName) st
 	}
 	var AllEmp string
 	for _, empLoop := range resp.Employes {
-		AllEmp += "| " + strconv.FormatInt(empLoop.Id, 10) + "|" + empLoop.Nama + "\t|" + empLoop.Username + "\t|" +
-			fmt.Sprintf("%.2f", empLoop.GajiPokok) + "\t|" + fmt.Sprintf("%.2f", empLoop.TunjanganMakan) + "\t" +
-			"|" + fmt.Sprintf("%.2f", empLoop.TunjanganTransport) + "\t|" + fmt.Sprintf("%.2f", empLoop.TotalGaji) +
-			"\t|" + empLoop.Message + "\t\t|" + empLoop.Role + "\t\t|\n"
+		AllEmp += "===Laporan Employee" + empLoop.Nama + "===\n" +
+			"Id  \t \t \t:" + strconv.FormatInt(empLoop.Id, 10) + "\n" +
+			"Nama  \t \t \t:" + empLoop.Nama + "\n" +
+			"Username  \t \t:" + empLoop.Username + "\n" +
+			"Gaji Pokok\t \t:" + strconv.FormatInt(empLoop.GajiPokok, 10) + "\n" +
+			"Tunjangan makan\t\t:" + strconv.FormatInt(empLoop.TunjanganMakan, 10) + "\n" +
+			"Tunjangan Transport\t:" + strconv.FormatInt(empLoop.TunjanganTransport, 10) + "\n" +
+			"Total Gaji \t\t:" + strconv.FormatInt(empLoop.TotalGaji, 10) + "\n" +
+			"Role \t \t \t:" + empLoop.Role + "\n"
 	}
 
-	return "================================================================================================================ \n " +
-		"| ID|Nama\t|UserName\t|Gaji Pokok\t|Tunj Makan\t|Tunj Transport\t|Total Gaji\t|Status\t\t|Role\t\t|\n" +
-		"=================================================================================================================== \n " +
-		AllEmp +
-		"==================================================================================================================="
+	return AllEmp
 }

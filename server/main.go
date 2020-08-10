@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	//employee "github.com/inggit_prakasa/HRD/employee"
@@ -155,9 +154,9 @@ func (s *server) LaporanByUsername(ctx context.Context, input *employee.Username
 	for i, empLoop := range employeeList {
 		if strings.EqualFold(empLoop.Username, input.Username) {
 			flag = false
-			tunjanganMakanTemp := 400000 * (empLoop.Absen / 22)
-			tunjanganTransportTemp := 500000 * (empLoop.Absen / 22)
-			gajiTotalTemp := empLoop.GajiPokok + tunjanganMakanTemp + tunjanganTransportTemp
+			tunjanganMakanTemp := float64(empLoop.TunjanganMakan) * (float64(empLoop.Absen) / float64(22))
+			tunjanganTransportTemp := float64(empLoop.TunjanganTransport) * (float64(empLoop.Absen) / float64(22))
+			gajiTotalTemp := empLoop.GajiPokok + int64(tunjanganMakanTemp) + int64(tunjanganTransportTemp)
 			EmployeeByUsername = &employee.Employee{
 				Id:                 empLoop.Id,
 				Absen:              empLoop.Absen,
@@ -167,18 +166,17 @@ func (s *server) LaporanByUsername(ctx context.Context, input *employee.Username
 				Password:           empLoop.Password,
 				GajiPokok:          empLoop.GajiPokok,
 				TotalGaji:          gajiTotalTemp,
-				TunjanganMakan:     tunjanganMakanTemp,
-				TunjanganTransport: tunjanganTransportTemp,
+				TunjanganMakan:     empLoop.TunjanganMakan,
+				TunjanganTransport: empLoop.TunjanganTransport,
 				Message:            empLoop.Message,
 				Role:               empLoop.Role,
 			}
 			employeeList[i] = EmployeeByUsername
 			writeStaffToPdf(EmployeeByUsername)
-			break
-
 		}
 	}
 	if flag {
+		EmployeeByUsername.Message = "Username Not Found, Please Insert Your Username"
 		return EmployeeByUsername, nil
 	} else {
 		return EmployeeByUsername, nil
@@ -187,9 +185,9 @@ func (s *server) LaporanByUsername(ctx context.Context, input *employee.Username
 
 func (s *server) LaporanAll(ctx context.Context, fileName *employee.FileName) (*employee.AllEmployee, error) {
 	for i, empLoop := range employeeList {
-		tunjanganMakanTemp := 400000 * (empLoop.Absen / 22)
-		tunjanganTransportTemp := 500000 * (empLoop.Absen / 22)
-		gajiTotalTemp := empLoop.GajiPokok + tunjanganMakanTemp + tunjanganTransportTemp
+		tunjanganMakanTemp := float64(empLoop.TunjanganMakan) * (float64(empLoop.Absen) / float64(22))
+		tunjanganTransportTemp := float64(empLoop.TunjanganTransport) * (float64(empLoop.Absen) / float64(22))
+		gajiTotalTemp := empLoop.GajiPokok + int64(tunjanganMakanTemp) + int64(tunjanganTransportTemp)
 		EmployeeTemp := &employee.Employee{
 			Id:                 empLoop.Id,
 			Absen:              empLoop.Absen,
@@ -199,13 +197,14 @@ func (s *server) LaporanAll(ctx context.Context, fileName *employee.FileName) (*
 			Password:           empLoop.Password,
 			GajiPokok:          empLoop.GajiPokok,
 			TotalGaji:          gajiTotalTemp,
-			TunjanganMakan:     tunjanganMakanTemp,
-			TunjanganTransport: tunjanganTransportTemp,
+			TunjanganMakan:     empLoop.TunjanganMakan,
+			TunjanganTransport: empLoop.TunjanganTransport,
 			Message:            empLoop.Message,
 			Role:               empLoop.Role,
 		}
 		employeeList[i] = EmployeeTemp
 	}
+
 	writeAllToPdf(fileName.File)
 	return &employee.AllEmployee{Employes: employeeList}, nil
 }
@@ -227,20 +226,29 @@ func writeStaffToPdf(emp *employee.Employee) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 	pdf.SetFont("Arial", "", 11)
-	pdf.Text(20, 10, "============== Laporan"+emp.Nama+"================")
-	pdf.Text(20, 20, "Id  \t \t \t :"+strconv.FormatInt(emp.Id, 10))
-	pdf.Text(20, 30, "Absen \t \t:"+strconv.FormatInt(emp.Absen, 10))
-	pdf.Text(20, 40, "Cuti  \t \t:"+strconv.FormatInt(emp.Cuti, 10))
-	pdf.Text(20, 50, "Nama  \t \t:"+emp.Nama)
-	pdf.Text(20, 60, "Username  \t \t:"+emp.Username)
-	pdf.Text(20, 70, "Gaji Pokok  \t \t:"+fmt.Sprintf("%.3f", emp.GajiPokok))
-	pdf.Text(20, 80, "Gaji Total  \t \t:"+fmt.Sprintf("%.3f", emp.TotalGaji))
-	pdf.Text(20, 90, "Tunjangan Makan  \t :"+fmt.Sprintf("%.3f", emp.TunjanganMakan))
-	pdf.Text(20, 100, "Tunjangan Transport  :"+fmt.Sprintf("%.3f", emp.TunjanganTransport))
-	pdf.Text(20, 110, "Message   \t:"+emp.Message)
-	pdf.Text(20, 120, "Role  \t \t:"+emp.Role)
+	pdf.Text(20, 10, "============== Laporan"+emp.Username+"================")
+	pdf.Text(20, 20, ":"+"Id")
+	pdf.Text(60, 20, ":"+strconv.FormatInt(emp.Id, 10))
+	pdf.Text(20, 30, "Absen")
+	pdf.Text(60, 30, ":"+strconv.FormatInt(emp.Absen, 10))
+	pdf.Text(20, 40, "Cuti")
+	pdf.Text(60, 40, ":"+strconv.FormatInt(emp.Cuti, 10))
+	pdf.Text(20, 50, "Nama")
+	pdf.Text(60, 50, ":"+emp.Nama)
+	pdf.Text(20, 60, "Username")
+	pdf.Text(60, 60, ":"+emp.Username)
+	pdf.Text(20, 70, "Gaji Pokok")
+	pdf.Text(60, 70, ":"+strconv.FormatInt(emp.GajiPokok, 10))
+	pdf.Text(20, 80, "Gaji Total")
+	pdf.Text(60, 80, ":"+strconv.FormatInt(emp.TotalGaji, 10))
+	pdf.Text(20, 90, "Tunjangan Makan")
+	pdf.Text(60, 90, ":"+strconv.FormatInt(emp.TunjanganMakan, 10))
+	pdf.Text(20, 100, "Tunjangan Transport")
+	pdf.Text(60, 100, ":"+strconv.FormatInt(emp.TunjanganTransport, 10))
+	pdf.Text(20, 110, "Role")
+	pdf.Text(60, 110, ":"+emp.Role)
 
-	err := pdf.OutputFileAndClose("laporan/" + emp.Nama + ".pdf")
+	err := pdf.OutputFileAndClose(emp.Username + ".pdf")
 	if err != nil {
 		log.Println("ERROR", err.Error())
 	}
@@ -248,30 +256,40 @@ func writeStaffToPdf(emp *employee.Employee) {
 }
 
 func writeAllToPdf(namaFile string) {
-	str1 := "========================================================================================================= \n "
-	str2 := "| ID|Nama\t|UserName|Gaji Pokok\t|Tunj Makan\t|Tunj Transport\t|Total Gaji\t|Message\t\t|Role\t\t|"
-	str3 := "============================================================================================================ \n "
-	pdf := gofpdf.New("L", "mm", "A4", "")
-	pdf.AddPage()
+	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetFont("Arial", "", 11)
-	x := 0
-	for _, empLoop := range employeeList {
-		if x == 1 {
+	flag := 120
+	for i, empLoop := range employeeList {
+		if i%2 == 0 {
 			pdf.AddPage()
-			x = 0
+			flag = 0
 		}
-		pdf.Text(20, 10, str1)
-		pdf.Text(20, 20, str2)
-		pdf.Text(20, 30, str3)
-		pdf.Text(20, float64((x+4)*10), "| "+strconv.FormatInt(empLoop.Id, 10)+"|"+empLoop.Nama+"\t|"+empLoop.Username+"\t|"+
-			fmt.Sprintf("%.2f", empLoop.GajiPokok)+"\t|"+fmt.Sprintf("%.2f", empLoop.TunjanganMakan)+"\t"+
-			"|"+fmt.Sprintf("%.2f", empLoop.TunjanganTransport)+"\t|"+fmt.Sprintf("%.2f", empLoop.TotalGaji)+
-			"\t|"+empLoop.Message+"\t\t|"+empLoop.Role+"\t\t|")
-		x++
+		pdf.Text(20, float64(flag+10), "============== Laporan"+empLoop.Nama+"================")
+		pdf.Text(20, float64(flag+20), "Id")
+		pdf.Text(60, float64(flag+20), ":"+strconv.FormatInt(empLoop.Id, 10))
+		pdf.Text(20, float64(flag+30), "Absen")
+		pdf.Text(60, float64(flag+30), ":"+strconv.FormatInt(empLoop.Absen, 10))
+		pdf.Text(20, float64(flag+40), "Cuti")
+		pdf.Text(60, float64(flag+40), ":"+strconv.FormatInt(empLoop.Cuti, 10))
+		pdf.Text(20, float64(flag+50), "Nama")
+		pdf.Text(60, float64(flag+50), ":"+empLoop.Nama)
+		pdf.Text(20, float64(flag+60), "Username")
+		pdf.Text(60, float64(flag+60), ":"+empLoop.Username)
+		pdf.Text(20, float64(flag+70), "Gaji Pokok")
+		pdf.Text(60, float64(flag+70), ":"+strconv.FormatInt(empLoop.GajiPokok, 10))
+		pdf.Text(20, float64(flag+80), "Gaji Total")
+		pdf.Text(60, float64(flag+80), ":"+strconv.FormatInt(empLoop.TotalGaji, 10))
+		pdf.Text(20, float64(flag+90), "Tunjangan Makan")
+		pdf.Text(60, float64(flag+90), ":"+strconv.FormatInt(empLoop.TunjanganMakan, 10))
+		pdf.Text(20, float64(flag+100), "Tunjangan Transport")
+		pdf.Text(60, float64(flag+100), ":"+strconv.FormatInt(empLoop.TunjanganTransport, 10))
+		pdf.Text(20, float64(flag+110), "Role")
+		pdf.Text(60, float64(flag+110), ":"+empLoop.Role)
+		flag = 120
 
 	}
 
-	err := pdf.OutputFileAndClose("laporan/" + namaFile + ".pdf")
+	err := pdf.OutputFileAndClose(namaFile + ".pdf")
 	if err != nil {
 		log.Println("ERROR", err.Error())
 	}
