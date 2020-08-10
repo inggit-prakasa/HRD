@@ -3,12 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
-	employee "github.com/inggit_prakasa/HRD/employee"
-	"google.golang.org/grpc"
+	"strings"
+
+	//employee "github.com/inggit_prakasa/HRD/employee"
 	"log"
 	"net"
-	"os"
 	"strconv"
+
+	"HRD/employee"
+
+	"github.com/jung-kurt/gofpdf"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -31,7 +36,7 @@ var employeeList = []*employee.Employee{
 		TotalGaji:          0,
 		TunjanganMakan:     400000,
 		TunjanganTransport: 500000,
-		Status:             "MASUK",
+		Message:            "MASUK",
 		Role:               "STAFF",
 	},
 	{
@@ -45,32 +50,32 @@ var employeeList = []*employee.Employee{
 		TotalGaji:          0,
 		TunjanganMakan:     400000,
 		TunjanganTransport: 500000,
-		Status:             "MASUK",
+		Message:            "MASUK",
 		Role:               "HRD",
 	},
 }
 
 func (s *server) Login(ctx context.Context, in *employee.DataLogin) (*employee.Employee, error) {
-	for i:= 0; i < len(employeeList); i++ {
+	for i := 0; i < len(employeeList); i++ {
 		if employeeList[i].Username == in.Username && employeeList[i].Password == in.Password {
-			return employeeList[i],nil
+			return employeeList[i], nil
 		}
 	}
 
 	return &employee.Employee{
-		Status: "User tidak ditemukan",
-	},nil
+		Message: "User tidak ditemukan",
+	}, nil
 }
 
 func (s *server) Absen(ctx context.Context, in *employee.Employeeid) (*employee.Result, error) {
-	for i:= 0; i < len(employeeList); i++ {
+	for i := 0; i < len(employeeList); i++ {
 		if employeeList[i].Id == in.Id {
 			employeeList[i].Absen += 1
-			return &employee.Result{Response: strconv.FormatInt(employeeList[i].Absen, 10)},nil
+			return &employee.Result{Response: strconv.FormatInt(employeeList[i].Absen, 10)}, nil
 		}
 	}
 
-	return &employee.Result{Response: "GAGAL"},nil
+	return &employee.Result{Response: "GAGAL"}, nil
 }
 
 func (s *server) CreateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
@@ -117,13 +122,13 @@ func (s *server) UpdateEmployee(ctx context.Context, in *employee.Employee) (*em
 		TotalGaji:          in.TotalGaji,
 		TunjanganMakan:     in.TunjanganMakan,
 		TunjanganTransport: in.TunjanganTransport,
-		Status:             in.Status,
+		Message:            in.Message,
 		Role:               in.Role,
 	}, nil
 }
 
 func (s *server) ReadAllEmployee(ctx context.Context, in *employee.Empty) (*employee.AllEmployee, error) {
-	return &employee.AllEmployee{Employes: employeeList},nil
+	return &employee.AllEmployee{Employes: employeeList}, nil
 }
 
 func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*employee.Result, error) {
@@ -144,41 +149,66 @@ func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*empl
 	}
 }
 
-//func (s *server) LaporanByUsername(ctx context.Context, input *employee.GetEmpByUsername) (*employee.Employee, error) {
-//	var EmployeeByUsername *employee.Employee
-//	flag := true
-//	for _, Cemployee := range employeeList {
-//		if strings.EqualFold(Cemployee.username, input.Username) {
-//			flag = false
-//			tunjanganMakanTemp := Cemployee.tunjanganMakan * (float32(Cemployee.absen) / 22.0)
-//			tunjanganTransportTemp := Cemployee.tunjanganTransport * (float32(Cemployee.absen) / 22.0)
-//			gajiTotalTemp := Cemployee.gajiPokok + tunjanganMakanTemp + tunjanganTransportTemp
-//			EmployeeByUsername = &employee.Employee{
-//				Id:                 Cemployee.id,
-//				Absen:              Cemployee.absen,
-//				Cuti:               Cemployee.cuti,
-//				Nama:               Cemployee.nama,
-//				Username:           Cemployee.username,
-//				Password:           Cemployee.password,
-//				GajiPokok:          Cemployee.gajiPokok,
-//				TotalGaji:          gajiTotalTemp,
-//				TunjanganMakan:     tunjanganMakanTemp,
-//				TunjanganTransport: tunjanganTransportTemp,
-//				Status:             Cemployee.status,
-//				Role:               Cemployee.role,
-//			}
-//			writeStringToFile(EmployeeByUsername)
-//			break
-//
-//		}
-//	}
-//	if flag {
-//		return EmployeeByUsername, nil
-//	} else {
-//		return EmployeeByUsername, nil
-//	}
-//}
+func (s *server) LaporanByUsername(ctx context.Context, input *employee.Username) (*employee.Employee, error) {
+	var EmployeeByUsername *employee.Employee
+	flag := true
+	for i, empLoop := range employeeList {
+		if strings.EqualFold(empLoop.Username, input.Username) {
+			flag = false
+			tunjanganMakanTemp := 400000 * (empLoop.Absen / 22)
+			tunjanganTransportTemp := 500000 * (empLoop.Absen / 22)
+			gajiTotalTemp := empLoop.GajiPokok + tunjanganMakanTemp + tunjanganTransportTemp
+			EmployeeByUsername = &employee.Employee{
+				Id:                 empLoop.Id,
+				Absen:              empLoop.Absen,
+				Cuti:               empLoop.Cuti,
+				Nama:               empLoop.Nama,
+				Username:           empLoop.Username,
+				Password:           empLoop.Password,
+				GajiPokok:          empLoop.GajiPokok,
+				TotalGaji:          gajiTotalTemp,
+				TunjanganMakan:     tunjanganMakanTemp,
+				TunjanganTransport: tunjanganTransportTemp,
+				Message:            empLoop.Message,
+				Role:               empLoop.Role,
+			}
+			employeeList[i] = EmployeeByUsername
+			writeStaffToPdf(EmployeeByUsername)
+			break
 
+		}
+	}
+	if flag {
+		return EmployeeByUsername, nil
+	} else {
+		return EmployeeByUsername, nil
+	}
+}
+
+func (s *server) LaporanAll(ctx context.Context, fileName *employee.FileName) (*employee.AllEmployee, error) {
+	for i, empLoop := range employeeList {
+		tunjanganMakanTemp := 400000 * (empLoop.Absen / 22)
+		tunjanganTransportTemp := 500000 * (empLoop.Absen / 22)
+		gajiTotalTemp := empLoop.GajiPokok + tunjanganMakanTemp + tunjanganTransportTemp
+		EmployeeTemp := &employee.Employee{
+			Id:                 empLoop.Id,
+			Absen:              empLoop.Absen,
+			Cuti:               empLoop.Cuti,
+			Nama:               empLoop.Nama,
+			Username:           empLoop.Username,
+			Password:           empLoop.Password,
+			GajiPokok:          empLoop.GajiPokok,
+			TotalGaji:          gajiTotalTemp,
+			TunjanganMakan:     tunjanganMakanTemp,
+			TunjanganTransport: tunjanganTransportTemp,
+			Message:            empLoop.Message,
+			Role:               empLoop.Role,
+		}
+		employeeList[i] = EmployeeTemp
+	}
+	writeAllToPdf(fileName.File)
+	return &employee.AllEmployee{Employes: employeeList}, nil
+}
 func main() {
 	lis, err := net.Listen("tcp", port)
 	log.Println("Serv...")
@@ -192,37 +222,57 @@ func main() {
 	}
 }
 
-func writeStringToFile(emp *employee.Employee) {
-	var str string
-	str = "============== Laporan" + emp.Nama + "================" + "\n" +
-		"Id  \t \t :" + strconv.FormatInt(emp.Id, 10) + "\n" +
-		"Absen \t \t:" + strconv.FormatInt(emp.Absen, 10) + "\n" +
-		"Cuti  \t \t:" + strconv.FormatInt(emp.Absen, 10) + "\n" +
-		"Nama  \t \t:" + emp.Nama + "\n" +
-		"Username  \t \t:" + emp.Username + "\n" +
-		"Gaji Pokok  \t \t:" + fmt.Sprintf("%.3f", emp.GajiPokok) + "\n" +
-		"Gaji Total  \t \t:" + fmt.Sprintf("%.3f", emp.TotalGaji) + "\n" +
-		"Tunjangan Makan  \t :" + fmt.Sprintf("%.3f", emp.TunjanganMakan) + "\n" +
-		"Tunjangan Transport  :" + fmt.Sprintf("%.3f", emp.TunjanganTransport) + "\n" +
-		"Status   \t:" + emp.Status + "\n" +
-		"Role  \t \t:" + emp.Role + "\n" + ""
+func writeStaffToPdf(emp *employee.Employee) {
 
-	f, err := os.Create("laporan/" + emp.Nama + ".pdf")
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "", 11)
+	pdf.Text(20, 10, "============== Laporan"+emp.Nama+"================")
+	pdf.Text(20, 20, "Id  \t \t \t :"+strconv.FormatInt(emp.Id, 10))
+	pdf.Text(20, 30, "Absen \t \t:"+strconv.FormatInt(emp.Absen, 10))
+	pdf.Text(20, 40, "Cuti  \t \t:"+strconv.FormatInt(emp.Cuti, 10))
+	pdf.Text(20, 50, "Nama  \t \t:"+emp.Nama)
+	pdf.Text(20, 60, "Username  \t \t:"+emp.Username)
+	pdf.Text(20, 70, "Gaji Pokok  \t \t:"+fmt.Sprintf("%.3f", emp.GajiPokok))
+	pdf.Text(20, 80, "Gaji Total  \t \t:"+fmt.Sprintf("%.3f", emp.TotalGaji))
+	pdf.Text(20, 90, "Tunjangan Makan  \t :"+fmt.Sprintf("%.3f", emp.TunjanganMakan))
+	pdf.Text(20, 100, "Tunjangan Transport  :"+fmt.Sprintf("%.3f", emp.TunjanganTransport))
+	pdf.Text(20, 110, "Message   \t:"+emp.Message)
+	pdf.Text(20, 120, "Role  \t \t:"+emp.Role)
+
+	err := pdf.OutputFileAndClose("laporan/" + emp.Nama + ".pdf")
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Println("ERROR", err.Error())
 	}
 
-	l, err := f.WriteString(str)
-	if err != nil {
-		fmt.Println(err)
-		f.Close()
-		return
+}
+
+func writeAllToPdf(namaFile string) {
+	str1 := "========================================================================================================= \n "
+	str2 := "| ID|Nama\t|UserName|Gaji Pokok\t|Tunj Makan\t|Tunj Transport\t|Total Gaji\t|Message\t\t|Role\t\t|"
+	str3 := "============================================================================================================ \n "
+	pdf := gofpdf.New("L", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "", 11)
+	x := 0
+	for _, empLoop := range employeeList {
+		if x == 1 {
+			pdf.AddPage()
+			x = 0
+		}
+		pdf.Text(20, 10, str1)
+		pdf.Text(20, 20, str2)
+		pdf.Text(20, 30, str3)
+		pdf.Text(20, float64((x+4)*10), "| "+strconv.FormatInt(empLoop.Id, 10)+"|"+empLoop.Nama+"\t|"+empLoop.Username+"\t|"+
+			fmt.Sprintf("%.2f", empLoop.GajiPokok)+"\t|"+fmt.Sprintf("%.2f", empLoop.TunjanganMakan)+"\t"+
+			"|"+fmt.Sprintf("%.2f", empLoop.TunjanganTransport)+"\t|"+fmt.Sprintf("%.2f", empLoop.TotalGaji)+
+			"\t|"+empLoop.Message+"\t\t|"+empLoop.Role+"\t\t|")
+		x++
+
 	}
-	fmt.Println(l, "bytes written successfully")
-	err = f.Close()
+
+	err := pdf.OutputFileAndClose("laporan/" + namaFile + ".pdf")
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Println("ERROR", err.Error())
 	}
 }

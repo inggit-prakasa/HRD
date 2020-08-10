@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 
-	employee "github.com/inggit_prakasa/HRD/employee"
+	//employee "github.com/inggit_prakasa/HRD/employee"
+	"HRD/employee"
+
 	"google.golang.org/grpc"
 )
 
@@ -192,7 +195,7 @@ func deleteEmployee() {
 
 func updateEmployee() {
 	var (
-		nama, username, password, status, role string
+		nama, username, password, message, role string
 	)
 
 	fmt.Print("nama : ")
@@ -223,7 +226,7 @@ func updateEmployee() {
 	fmt.Print("password : ")
 	fmt.Scan(&password)
 	fmt.Print("status : ")
-	fmt.Scan(&status)
+	fmt.Scan(&message)
 	fmt.Print("role : ")
 	fmt.Scan(&role)
 
@@ -232,7 +235,7 @@ func updateEmployee() {
 		Nama:     nama,
 		Username: username,
 		Password: password,
-		Status:   status,
+		Message:  message,
 		Role:     role,
 	})
 
@@ -251,7 +254,7 @@ func updateEmployee() {
 
 func buatEmployee() {
 	var (
-		nama, username, password, status, role string
+		nama, username, password, message, role string
 	)
 
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
@@ -269,7 +272,7 @@ func buatEmployee() {
 	fmt.Print("password : ")
 	fmt.Scan(&password)
 	fmt.Print("status : ")
-	fmt.Scan(&status)
+	fmt.Scan(&message)
 	fmt.Print("role : ")
 	fmt.Scan(&role)
 
@@ -277,7 +280,7 @@ func buatEmployee() {
 		Nama:     nama,
 		Username: username,
 		Password: password,
-		Status:   status,
+		Message:  message,
 		Role:     role,
 	})
 
@@ -336,20 +339,18 @@ func laporanEmployee() {
 	fmt.Println("            Laporan Data Staff                    ")
 	fmt.Println("--------------------------------------------------")
 	fmt.Println("|| 1. Laporan Staff By Name\t\t\t||")
-	fmt.Println("|| 2. Laporan All Staff\t\t\t||")
-	fmt.Println("|| 3. Exit\t\t\t\t\t\t||")
+	fmt.Println("|| 2. Laporan All Staff\t\t\t\t||")
+	fmt.Println("|| 3. Exit\t\t\t\t\t||")
 	fmt.Println("------------ Please Press [1/2/3] --------------- ")
 	fmt.Println(" ")
 	var d int
 	fmt.Print("Input Pilihan Anda :")
-	fmt.Scanln(&d)
+	fmt.Scan(&d)
 	switch d {
 	case 1:
 		singleStaffReport()
-		laporanEmployee()
 	case 2:
 		allStaffReport()
-		laporanEmployee()
 	case 3:
 		main()
 	default:
@@ -391,4 +392,44 @@ func allStaffReport() {
 	}
 	result := LaporanAllEmployee(c, input)
 	fmt.Println(result)
+}
+
+func GetEmployeeByUsername(c employee.ManageEmpClient, input *employee.Username) string {
+	resp, err := c.LaporanByUsername(context.Background(), input)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	return "Id  \t \t \t:" + strconv.FormatInt(resp.Id, 10) + "\n" +
+		"Nama  \t \t \t:" + resp.Nama + "\n" +
+		"Username  \t \t:" + resp.Username + "\n" +
+		"Gaji Pokok\t \t:" + fmt.Sprintf("%.2f", resp.GajiPokok) + "\n" +
+		"Tunjangan makan\t:" + fmt.Sprintf("%.2f", resp.TunjanganMakan) + "\n" +
+		"Tunjangan Transport\t:" + fmt.Sprintf("%.2f", resp.TunjanganTransport) + "\n" +
+		"Total Gaji \t\t:" + fmt.Sprintf("%.2f", resp.TotalGaji) + "\n" +
+		"Role \t \t \t:" + resp.Role +
+		"Message \t \t :" + resp.Message + "\n"
+}
+
+func LaporanAllEmployee(c employee.ManageEmpClient, input *employee.FileName) string {
+	resp, err := c.LaporanAll(context.Background(), input)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	if len(resp.Employes) == 0 {
+		return "Belum ada Staff yang terdaftar di Aplikasi"
+	}
+	var AllEmp string
+	for _, empLoop := range resp.Employes {
+		AllEmp += "| " + strconv.FormatInt(empLoop.Id, 10) + "|" + empLoop.Nama + "\t|" + empLoop.Username + "\t|" +
+			fmt.Sprintf("%.2f", empLoop.GajiPokok) + "\t|" + fmt.Sprintf("%.2f", empLoop.TunjanganMakan) + "\t" +
+			"|" + fmt.Sprintf("%.2f", empLoop.TunjanganTransport) + "\t|" + fmt.Sprintf("%.2f", empLoop.TotalGaji) +
+			"\t|" + empLoop.Message + "\t\t|" + empLoop.Role + "\t\t|\n"
+	}
+
+	return "================================================================================================================ \n " +
+		"| ID|Nama\t|UserName\t|Gaji Pokok\t|Tunj Makan\t|Tunj Transport\t|Total Gaji\t|Status\t\t|Role\t\t|\n" +
+		"=================================================================================================================== \n " +
+		AllEmp +
+		"==================================================================================================================="
 }
