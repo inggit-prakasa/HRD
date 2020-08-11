@@ -35,6 +35,7 @@ func main() {
 	switch emp.Role {
 	case "STAFF":
 		var b int
+		handlAbsen := true
 		flag := true
 		for flag {
 			fmt.Println("--------------------------------------------------")
@@ -47,7 +48,12 @@ func main() {
 			fmt.Scan(&b)
 			switch b {
 			case 1:
+				if !handlAbsen {
+					fmt.Println("Anda sudah absen hari ini")
+					break
+				}
 				absenStaff(emp.Id)
+				handlAbsen = false
 			case 2:
 				lihatProfile(emp.Nama)
 			case 3:
@@ -130,7 +136,6 @@ func lihatProfile(nama string) {
 	r, err := emp.ReadEmployee(context.Background(), &employee.NameId{
 		Name: nama,
 	})
-	fmt.Println(r)
 	fmt.Println("----PROFILE-----")
 	fmt.Println("Nama \t\t:", r.Nama)
 	fmt.Println("Absen \t\t:", r.Absen)
@@ -167,10 +172,9 @@ func bacaAllEmployee() {
 	emp := employee.NewManageEmpClient(conn)
 
 	r, err := emp.ReadAllEmployee(context.Background(), &employee.Empty{})
-
-	for i := 0; i < len(r.Employes); i++ {
-		fmt.Println(r.Employes[i].Id)
-		fmt.Println(r.Employes[i].Nama)
+	fmt.Println("ID \t Nama \t Username \t Absen \t Role")
+	for i:=0; i < len(r.Employes) ;i++ {
+		fmt.Printf("%d \t %s \t %s \t\t %d \t %s \n", r.Employes[i].Id,r.Employes[i].Nama,r.Employes[i].Username,r.Employes[i].Absen,r.Employes[i].Role)
 	}
 }
 
@@ -184,7 +188,7 @@ func deleteEmployee() {
 
 	emp := employee.NewManageEmpClient(conn)
 
-	fmt.Print("nama : ")
+	fmt.Print("username/ID : ")
 	fmt.Scan(&nama)
 
 	r, err := emp.DeleteEmployee(context.Background(), &employee.NameId{
@@ -196,10 +200,11 @@ func deleteEmployee() {
 
 func updateEmployee() {
 	var (
-		nama, username, password, message, role string
+		pilRole int
+		nama, username, password, role string
 	)
 
-	fmt.Print("nama : ")
+	fmt.Print("Username/ID : ")
 	fmt.Scan(&nama)
 
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
@@ -215,33 +220,38 @@ func updateEmployee() {
 	})
 
 	if r1.Id == 0 {
-		fmt.Println("Nama salah")
+		fmt.Println("Username/id salah")
 		return
 	}
 
-	fmt.Print("Update nama")
+	fmt.Println("--- EDIT --- ")
 	fmt.Print("Nama : ")
 	fmt.Scan(&nama)
 	fmt.Print("username : ")
 	fmt.Scan(&username)
 	fmt.Print("password : ")
 	fmt.Scan(&password)
-	fmt.Print("status : ")
-	fmt.Scan(&message)
-	fmt.Print("role : ")
-	fmt.Scan(&role)
+	fmt.Print("role [1.STAFF/2.HRD] : ")
+	fmt.Scan(&pilRole)
+	if pilRole == 1 {
+		role = "STAFF"
+	} else if pilRole == 2 {
+		role = "HRD"
+	} else {
+		fmt.Println("Pilihan salah, Coba Lagi")
+		return
+	}
 
 	r, err := emp.UpdateEmployee(context.Background(), &employee.Employee{
 		Id:       r1.Id,
 		Nama:     nama,
 		Username: username,
 		Password: password,
-		Message:  message,
 		Role:     role,
 	})
 
 	if r.Id == 0 {
-		fmt.Println("Tidak ada Karyawan")
+		fmt.Println("Username sudah digunakan, Coba lagi")
 	} else {
 		fmt.Println("-------------")
 		fmt.Printf("Id : %d\n", r.Id)
@@ -255,7 +265,8 @@ func updateEmployee() {
 
 func buatEmployee() {
 	var (
-		nama, username, password, message, role string
+		pilRole int
+		nama, username, password, role string
 	)
 
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
@@ -272,16 +283,21 @@ func buatEmployee() {
 	fmt.Scan(&username)
 	fmt.Print("password : ")
 	fmt.Scan(&password)
-	fmt.Print("status : ")
-	fmt.Scan(&message)
-	fmt.Print("role : ")
-	fmt.Scan(&role)
+	fmt.Print("role [1.STAFF/2.HRD] : ")
+	fmt.Scan(&pilRole)
+	if pilRole == 1 {
+		role = "STAFF"
+	} else if pilRole == 2 {
+		role = "HRD"
+	} else {
+		fmt.Println("Pilihan salah, Coba Lagi")
+		return
+	}
 
 	r, err := emp.CreateEmployee(context.Background(), &employee.Employee{
 		Nama:     nama,
 		Username: username,
 		Password: password,
-		Message:  message,
 		Role:     role,
 	})
 
@@ -290,7 +306,7 @@ func buatEmployee() {
 	}
 
 	if r.Id == 0 {
-		fmt.Println("Tidak ada Karyawan")
+		fmt.Println("Username sudah dipakai")
 	} else {
 		fmt.Println("-------------")
 		fmt.Printf("Id : %d\n", r.Id)
@@ -308,7 +324,7 @@ func bacaEmployee() {
 		nama string
 	)
 
-	fmt.Print("nama : ")
+	fmt.Print("username/ID : ")
 	fmt.Scan(&nama)
 	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {

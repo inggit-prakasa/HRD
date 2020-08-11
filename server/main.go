@@ -168,13 +168,13 @@ func (s *server) ReadEmployee(ctx context.Context, in *employee.NameId) (*employ
 	db := conn()
 	defer db.Close()
 	empl := &employee.Employee{}
-	stmt, err := db.Prepare("SELECT * FROM employee WHERE nama = ?")
+	stmt, err := db.Prepare("SELECT * FROM employee WHERE username = ? OR id = ?")
 
 	if err != nil {
 		panic(err.Error())
 	}
 
-	err = stmt.QueryRow(in.Name).Scan(&empl.Id,&empl.Nama,&empl.Absen,&empl.Cuti,&empl.Username,&empl.Password,&empl.GajiPokok,&empl.TotalGaji,&empl.TunjanganMakan,&empl.TunjanganTransport,&empl.Role)
+	err = stmt.QueryRow(in.Name,in.Name).Scan(&empl.Id,&empl.Nama,&empl.Absen,&empl.Cuti,&empl.Username,&empl.Password,&empl.GajiPokok,&empl.TotalGaji,&empl.TunjanganMakan,&empl.TunjanganTransport,&empl.Role)
 
 	if err != nil {
 		return empl,nil
@@ -186,6 +186,10 @@ func (s *server) ReadEmployee(ctx context.Context, in *employee.NameId) (*employ
 func (s *server) UpdateEmployee(ctx context.Context, in *employee.Employee) (*employee.Employee, error) {
 	db := conn()
 	defer db.Close()
+
+	if handUsername(in.Username) {
+		return &employee.Employee{},nil
+	}
 
 	stmt, err := db.Prepare("UPDATE employee SET nama=?, username=?, password=?, role=? WHERE id = ?")
 
@@ -267,13 +271,17 @@ func (s *server) DeleteEmployee(ctx context.Context, in *employee.NameId) (*empl
 	db := conn()
 	defer db.Close()
 
-	stmt, err := db.Prepare("DELETE FROM employee WHERE nama = ?")
+	stmt, err := db.Prepare("DELETE FROM employee WHERE username = ? OR id = ?")
 
 	if err != nil {
 		panic(err.Error())
 	}
-	_, err = stmt.Exec(in.Name)
+	status, err := stmt.Exec(in.Name,in.Name)
+	row,_ := status.RowsAffected()
 
+	if row == 0 {
+		return &employee.Result{Response: "GAGAL"}, nil
+	}
 	if err != nil {
 		panic(err.Error())
 	}
@@ -355,7 +363,7 @@ func (s *server) LaporanAll(ctx context.Context, fileName *employee.FileName) (*
 	}
 
 	writeAllToPdf(fileName.File)
-	return &employee.AllEmployee{Employes: employeeList}, nil
+	return &employee.AllEmployee{Employes: employeeList1}, nil
 }
 func main() {
 	lis, err := net.Listen("tcp", port)
